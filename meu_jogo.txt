@@ -1,0 +1,17 @@
+meu_jogo/
+│
+├── motor.py              # Arquivo principal que inicia o jogo
+├── config.py             # Configurações globais (tamanho da tela, cores, etc.)
+│
+├── assets/               # Recursos do jogo
+│   ├── imagens/          # Sprites, fundos, ícones
+│   └── audios/           # Sons e músicas
+│
+├── core/                 # Núcleo da engine
+│   ├── game.py           # Classe principal do jogo (loop)
+│   ├── player.py         # Classe do jogador
+│   ├── enemy.py          # Classe dos inimigos
+│   ├── utils.py          # Funções auxiliares
+│   └── __init__.py
+│
+└── README.md             # Documentação do projeto
