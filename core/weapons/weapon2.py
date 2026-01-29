@@ -25,6 +25,9 @@ class Weapon2(BaseWeapon):
                 velocity=(0, 10),  # velocidade vertical para baixo
                 damage=self.damage,
                 color=(0, 255, 255),  # ciano
-                size=(6, 180)  # formato de feixe
+                size=(6, 180),  # formato de feixe
+                owner="enemy",
+                
+                
             )
             projectiles_group.add(projectile)

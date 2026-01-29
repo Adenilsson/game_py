@@ -38,7 +38,9 @@ class PlayerWeapon:
                 velocity=(0, -10),  # para cima
                 damage=self.damage,
                 color=(255, 255, 0),
-                size=(6, 15)
+                size=(6, 15),
+                owner= "player"
+                
             )
             projectiles_group.add(projectile)
 

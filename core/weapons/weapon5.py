@@ -31,6 +31,7 @@ class Weapon5(BaseWeapon):
                 velocity=velocity,
                 damage=self.damage,
                 color=(255, 0, 255),  # magenta
-                size=(10, 10)
+                size=(10, 10),
+                owner= "enemy"
             )
             projectiles_group.add(projectile)

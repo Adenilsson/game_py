@@ -73,7 +73,6 @@ class Player(pygame.sprite.Sprite):
             self.health = 0
             print("💀 Player morreu!")
             self.alive = False
-            # Aqui você pode encerrar o jogo ou reiniciar
        
     
     def draw_health_bar(self, surface):

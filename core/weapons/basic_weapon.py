@@ -16,7 +16,8 @@ class BasicWeapon(BaseWeapon):
             velocity=(0, -10),
             damage=self.damage,
             color=(0, 255, 0),   # verde
-            size=(5, 15)
+            size=(5, 15),
+            owner="player"
         )
         projectiles_group.add(projectile)
 
@@ -38,7 +39,9 @@ class DoubleShot(BaseWeapon):
                 velocity=(0, -12),
                 damage=self.damage,
                 color=(0, 0, 255),   # azul
-                size=(6, 18)
+                size=(6, 18),
+                owner="player"
+                
             )
             projectiles_group.add(projectile)
 
@@ -59,7 +62,8 @@ class TripolShot(BaseWeapon):
                 velocity=(0, -12),
                 damage=self.damage,
                 color=(0, 0, 255),   # azul
-                size=(6, 18)
+                size=(6, 18),
+                owner="player"
             )
             projectiles_group.add(projectile)
 
@@ -77,6 +81,7 @@ class HeavyLaser(BaseWeapon):
             velocity=(0, -20),
             damage=self.damage,
             color=(255, 0, 0),   # vermelho
-            size=(10, 40)        # bem maior
+            size=(10, 40) ,       # bem maior
+            owner="player"
         )
         projectiles_group.add(projectile)
