@@ -4,9 +4,23 @@ from config import WIDTH, HEIGHT
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.image = pygame.Surface((50, 50))
-        self.image.fill((0, 255, 0))  # verde
-        self.rect = self.image.get_rect(center=(WIDTH//2, HEIGHT-60))
+        #self.image = pygame.Surface((50, 50))
+        #self.image.fill((0, 255, 0))  # verde
+        # Carrega sprite da nave 
+        self.image_idle = pygame.image.load("assets/aviao_0.png").convert_alpha() 
+        self.image_idle = pygame.transform.scale(self.image_idle, (50, 50)) 
+        
+        self.image_right = pygame.image.load("assets/aviao_d.png").convert_alpha() 
+        self.image_right = pygame.transform.scale(self.image_right, (50, 50)) 
+        
+        self.image_left = pygame.image.load("assets/aviao_e.png").convert_alpha() 
+        self.image_left = pygame.transform.scale(self.image_left, (50, 50)) 
+        
+        # Começa com a imagem padrão 
+        self.image = self.image_idle
+        
+        self.rect = self.image.get_rect(center=(WIDTH//2, HEIGHT - 60))
+
         self.speed = 5
 
         # Vida do jogador
@@ -16,8 +30,12 @@ class Player(pygame.sprite.Sprite):
     def update(self, keys):
         if keys[pygame.K_a] and self.rect.left > 0:
             self.rect.x -= self.speed
-        if keys[pygame.K_d] and self.rect.right < WIDTH:
+            self.image = self.image_left
+        elif keys[pygame.K_d] and self.rect.right < WIDTH:
             self.rect.x += self.speed
+            self.image = self.image_right
+        else: 
+            self.image = self.image_idle
         if keys[pygame.K_w] and self.rect.top > 0:
             self.rect.y -= self.speed
         if keys[pygame.K_s] and self.rect.bottom < HEIGHT:
@@ -28,9 +46,10 @@ class Player(pygame.sprite.Sprite):
         if self.health <= 0:
             self.health = 0
             print("💀 Player morreu!")
-            return
+            self.alive = False
             # Aqui você pode encerrar o jogo ou reiniciar
-
+       
+    
     def draw_health_bar(self, surface):
         # Barra de vida simples
         bar_width = 100

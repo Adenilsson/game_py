@@ -15,6 +15,6 @@ class Projectile(pygame.sprite.Sprite):
         self.rect.y += self.velocity[1]
 
         # Remove se sair da tela
-        if (self.rect.top > 600 or self.rect.bottom < 0 or
+        if (self.rect.top > 800 or self.rect.bottom < 0 or
             self.rect.left < 0 or self.rect.right > 800):
             self.kill()
