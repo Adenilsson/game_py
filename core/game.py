@@ -3,6 +3,9 @@ from config import WIDTH, HEIGHT, FPS, BLACK
 from core.player import Player
 from core.enemy import Enemy
 from background import Background
+from core.weapons.basic_weapon import BasicWeapon
+from core.weapons.basic_weapon import DoubleShot
+from core.weapons.basic_weapon import HeavyLaser
 
 
 class Game:
@@ -26,16 +29,23 @@ class Game:
             enemy = Enemy(weapon_type=i+1)
             self.all_sprites.add(enemy)
             self.enemies.add(enemy)
-
+    
     def run(self):
         running = True
         while running:
             self.clock.tick(FPS)
+            keys = pygame.key.get_pressed()
+            self.player.update(keys)
+            # HUD das armas
+            
+
+            if keys[pygame.K_SPACE]:
+                self.player.shoot(self.projectiles_group)
 
             # Eventos
-            for event in pygame.event.get():
+            """for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    running = False
+                    running = False"""
 
             # Atualizações
             keys = pygame.key.get_pressed()
@@ -46,7 +56,13 @@ class Game:
                 enemy.draw_shadow(self.screen)
             self.projectiles_group.update()
             #self.enemies.update()
-            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_f:
+                        self.player.change_weapon()
+
 
             # Colisão
             if pygame.sprite.spritecollideany(self.player, self.enemies):
@@ -66,6 +82,7 @@ class Game:
             self.all_sprites.draw(self.screen) 
             self.enemies.draw(self.screen) 
             self.projectiles_group.draw(self.screen)
+            self.player.draw_weapons_hud(self.screen)
             
             self.all_sprites.draw(self.screen)
             # Barra de vida 
