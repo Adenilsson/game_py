@@ -16,8 +16,8 @@ class Enemy(pygame.sprite.Sprite):
         self.image = pygame.transform.rotate(self.image, 180)  # aponta para baixo
         
         # atributos de vida 
-        self.max_health = health 
         self.health = health 
+        self.weapon_type = weapon_type 
         self.alive = True
         if health == 30: 
             self.score_value = 1 
@@ -78,16 +78,19 @@ class Enemy(pygame.sprite.Sprite):
         shadow = pygame.Surface((40, 15), pygame.SRCALPHA)
         pygame.draw.ellipse(shadow, (0, 0, 0, 100), shadow.get_rect())
         screen.blit(shadow, (self.rect.centerx - 20, self.rect.bottom - 5))
-    def take_damage(self, amount, projectiles_group=None, game=None): 
-        """Reduz a vida do inimigo e mata se chegar a zero""" 
+        
+        
+    def take_damage(self, amount, game=None):
         self.health -= amount
         if self.health <= 0:
             self.health = 0
             self.alive = False
             print("💥 Inimigo destruído!")
-            #if game:  # soma pontos ao jogo
-            #    game.score += self.score_value
+            if game:  # soma pontos antes de remover
+                game.score += self.score_value
             self.kill()
+
+            
 
 
     def draw_health_bar(self, surface): 

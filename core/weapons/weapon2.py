@@ -10,7 +10,8 @@ class Weapon2(BaseWeapon):
         fire_rate: intervalo entre disparos (ms)
         """
         super().__init__(owner, damage, fire_rate)
-
+    
+       
     def update(self, player, projectiles_group):
         now = pygame.time.get_ticks()
 

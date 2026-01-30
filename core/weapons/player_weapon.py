@@ -19,9 +19,16 @@ class PlayerWeapon:
 
     def shoot(self, projectiles_group):
         now = pygame.time.get_ticks()
-
+        if self.ammo > 0 and now - self.last_shot > self.fire_rate:
+            self.ammo -= 1
+            self.last_shot = now
+            print("🔫 Disparo! Munição restante:", self.ammo)
+            if self.ammo == 0:
+                self.start_reload()
+                
         # Verifica intervalo entre disparos
         if now - self.last_shot < self.fire_rate:
+            
             return
 
         # Verifica munição

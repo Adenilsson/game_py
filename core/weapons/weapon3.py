@@ -20,9 +20,6 @@ class Weapon3(BaseWeapon):
                 color=(0, 200, 255),  # azul claro
                 size=(15, 15),
                 owner="enemy",
-                
-                
-                
             )
             self.projectiles.append((projectile, i * 2*math.pi/3))  # guarda projétil + ângulo inicial
 

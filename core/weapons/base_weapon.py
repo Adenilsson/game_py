@@ -2,7 +2,7 @@ import pygame
 from core.weapons.projectile import Projectile
 
 class BaseWeapon:
-    def __init__(self, owner, damage=10, fire_rate=300, ammo=None, burst=1,duration=None):
+    def __init__(self, owner, damage=10, fire_rate=300, ammo=None, ammo_max =20, burst=1,duration=None, reload_time=200):
         """
         owner: referência ao player
         damage: dano por projétil
@@ -17,7 +17,14 @@ class BaseWeapon:
         self.burst = burst
         self.duration = duration 
         self.last_shot = 0
-
+        self.reload_time = reload_time
+        self.last_reload = 0
+        self.reloading = True
+        self.reload_start = 0
+        
+    def update(self, player=None, projectiles_group=None):
+        # por padrão não faz nada 
+        pass
     def shoot(self, projectiles_group):
         now = pygame.time.get_ticks()
 
@@ -41,6 +48,7 @@ class BaseWeapon:
                 color=(255, 255, 0),
                 size=(6, 15),
                 owner= "enemy"
+                
                 
             )
             projectiles_group.add(projectile)

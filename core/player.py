@@ -48,12 +48,14 @@ class Player(pygame.sprite.Sprite):
         self.weapon.shoot(projectiles_group)
         
         
+        
     def change_weapon(self):
         #self.weapon = new_weapon_class(self)
         self.current_weapon_index = (self.current_weapon_index + 1) % len(self.weapons) 
         self.weapon = self.weapons[self.current_weapon_index]
             
     def update(self, keys):
+        
         if keys[pygame.K_a] and self.rect.left > 0:
             self.rect.x -= self.speed
             self.image = self.image_left
@@ -66,6 +68,8 @@ class Player(pygame.sprite.Sprite):
             self.rect.y -= self.speed
         if keys[pygame.K_s] and self.rect.bottom < HEIGHT:
             self.rect.y += self.speed
+        # Atualizar arma (disparo)
+        self.current_weapon.update()
 
     def take_damage(self, amount):
         self.health -= amount
@@ -107,6 +111,9 @@ class Player(pygame.sprite.Sprite):
             text_surface = font.render(ammo_text, True, (0,0,0))
             text_rect = text_surface.get_rect(center=pos)
             surface.blit(text_surface, text_rect)
-
+    
+    @property
+    def current_weapon(self):
+        return self.weapons[self.current_weapon_index]
 
 
