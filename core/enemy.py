@@ -11,8 +11,8 @@ class Enemy(pygame.sprite.Sprite):
     def __init__(self, x=100, y=100, health=50, weapon_type=1):
         super().__init__()
         # Carrega sprite do avião
-        self.image = pygame.image.load("assets/aviao_0.png").convert_alpha()
-        self.image = pygame.transform.scale(self.image, (50, 50))
+        self.image = pygame.image.load("assets/aviao.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (70, 70))
         self.image = pygame.transform.rotate(self.image, 180)  # aponta para baixo
         
         # atributos de vida 
@@ -76,8 +76,8 @@ class Enemy(pygame.sprite.Sprite):
 
     def draw_shadow(self, screen):
         shadow = pygame.Surface((40, 15), pygame.SRCALPHA)
-        pygame.draw.ellipse(shadow, (0, 0, 0, 100), shadow.get_rect())
-        screen.blit(shadow, (self.rect.centerx - 20, self.rect.bottom - 5))
+        pygame.draw.ellipse(shadow, (0, 0, 0, 200), shadow.get_rect())
+        screen.blit(shadow, (self.rect.centerx - 20, self.rect.bottom + 50))
         
         
     def take_damage(self, amount, game=None):

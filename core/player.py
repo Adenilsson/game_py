@@ -14,13 +14,13 @@ class Player(pygame.sprite.Sprite):
         #self.image.fill((0, 255, 0))  # verde
         # Carrega sprite da nave 
         self.image_idle = pygame.image.load("assets/aviao_0.png").convert_alpha() 
-        self.image_idle = pygame.transform.scale(self.image_idle, (50, 50)) 
+        self.image_idle = pygame.transform.scale(self.image_idle, (70, 70)) 
         
         self.image_right = pygame.image.load("assets/aviao_d.png").convert_alpha() 
-        self.image_right = pygame.transform.scale(self.image_right, (50, 50)) 
+        self.image_right = pygame.transform.scale(self.image_right, (70, 70)) 
         
         self.image_left = pygame.image.load("assets/aviao_e.png").convert_alpha() 
-        self.image_left = pygame.transform.scale(self.image_left, (50, 50)) 
+        self.image_left = pygame.transform.scale(self.image_left, (70, 70)) 
         
         self.weapon = BasicWeapon(self) # começa com arma básica
         # Lista de armas disponíveis 
