@@ -12,8 +12,8 @@ class Weapon1(BaseWeapon):
             projectile = Projectile( 
                 x=self.owner.rect.centerx, 
                 y=self.owner.rect.bottom,
-                velocity=(0, 5), 
                 damage=self.damage, 
+                 velocity=(0, 5), 
                 color=(255,255,0), # amarelo
                 size=(10,20),
                 owner="enemy",

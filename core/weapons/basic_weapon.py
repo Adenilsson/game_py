@@ -79,7 +79,7 @@ class DoubleShot(BaseWeapon):
     def start_reload(self): 
         self.reloading = True 
         self.reload_start = pygame.time.get_ticks() 
-        print("🔄 Recarga iniciada...")
+        print("Recarga iniciada...")
         
     def update(self, player=None, projectiles_group=None): 
         if self.reloading: 
@@ -87,7 +87,7 @@ class DoubleShot(BaseWeapon):
             if now - self.reload_start >= self.reload_time: 
                 self.ammo = self.ammo_max
                 self.reloading = False
-                print("✅ Recarga concluída! Munição:", self.ammo)
+                print("Recarga concluída! Munição:", self.ammo)
         
 
 class TripolShot(BaseWeapon):

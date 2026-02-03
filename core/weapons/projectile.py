@@ -1,7 +1,7 @@
 import pygame
 
 class Projectile(pygame.sprite.Sprite):
-    def __init__(self, x, y, velocity, damage, color=(255,255,0), size=(10,20),owner ="player"):
+    def __init__(self, x, y, damage, color=(255,255,0), size=(10,20), velocity=(0, -5), owner="player"):
         super().__init__()
         self.image = pygame.Surface(size)
         self.image.fill(color)

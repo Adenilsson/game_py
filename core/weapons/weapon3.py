@@ -15,8 +15,8 @@ class Weapon3(BaseWeapon):
             projectile = Projectile(
                 x=owner.rect.centerx,
                 y=owner.rect.centery,
-                velocity=(0, 6),   # não se movem por conta própria
                 damage=damage,
+                velocity=(0, 6),   # não se movem por conta própria
                 color=(0, 200, 255),  # azul claro
                 size=(15, 15),
                 owner="enemy",

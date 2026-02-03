@@ -23,8 +23,8 @@ class Weapon2(BaseWeapon):
             projectile = Projectile(
                 x=self.owner.rect.centerx,
                 y=self.owner.rect.bottom,
-                velocity=(0, 10),  # velocidade vertical para baixo
                 damage=self.damage,
+                velocity=(0, 10),  # velocidade vertical para baixo
                 color=(0, 255, 255),  # ciano
                 size=(6, 180),  # formato de feixe
                 owner="enemy",

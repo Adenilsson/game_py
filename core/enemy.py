@@ -5,6 +5,7 @@ from core.weapons.weapon2 import Weapon2
 from core.weapons.weapon3 import Weapon3
 from core.weapons.weapon4 import Weapon4
 from core.weapons.weapon5 import Weapon5
+from core.weapons.projectile import Projectile
 
 class Enemy(pygame.sprite.Sprite):
     #def __init__(self, weapon_type=1):
@@ -14,6 +15,9 @@ class Enemy(pygame.sprite.Sprite):
         self.image = pygame.image.load("assets/aviao.png").convert_alpha()
         self.image = pygame.transform.scale(self.image, (70, 70))
         self.image = pygame.transform.rotate(self.image, 180)  # aponta para baixo
+        
+        self.base_damage = 10  # dano base do inimigo
+        self.max_health = health
         
         # atributos de vida 
         self.health = health 
@@ -48,19 +52,28 @@ class Enemy(pygame.sprite.Sprite):
         self.speed_y = random.randint(2, 5)   # velocidade vertical
         self.speed_x = random.choice([-2, -1, 0, 1, 2])  # movimento horizontal
 
-    def update(self, player, projectiles_group, game):
+    def update(self, player, projectiles_group, game, speed=None, damage=None):
+        # Se valores foram passados pelo sistema de níveis, aplica
+        if speed is not None:
+            self.speed_y = speed
+        if damage is not None:
+            self.base_damage = damage  # você pode usar esse atributo no ataque
+
         # Movimento
         self.rect.y += self.speed_y
         self.rect.x += self.speed_x
+
         # colisão com projéteis 
         hits = pygame.sprite.spritecollide(self, projectiles_group, False) 
         for proj in hits: 
-           if proj.owner == "player": 
-               self.take_damage(proj.damage, game)
-               proj.kill()
+            if proj.owner == "player": 
+                self.take_damage(proj.damage, game)
+                proj.kill()
+
         # se morrer, remove do grupo
         if not self.alive: 
             self.kill()
+
         # Rebater nas laterais
         if self.rect.left < 0 or self.rect.right > WIDTH:
             self.speed_x *= -1
@@ -72,7 +85,10 @@ class Enemy(pygame.sprite.Sprite):
             self.speed_x = random.choice([-2, -1, 0, 1, 2])
 
         # Atualizar arma (disparo)
-        self.weapon.update(player, projectiles_group)
+        # Aqui você pode usar o novo dano
+        if hasattr(self, "weapon"):
+            self.weapon.damage = self.base_damage
+            self.weapon.update(player, projectiles_group)
 
     def draw_shadow(self, screen):
         shadow = pygame.Surface((40, 15), pygame.SRCALPHA)
@@ -101,3 +117,64 @@ class Enemy(pygame.sprite.Sprite):
         fill_rect = pygame.Rect(self.rect.x, self.rect.y - 10, fill, bar_height)
         pygame.draw.rect(surface, (255,0,0), outline_rect) # fundo vermelho
         pygame.draw.rect(surface, (0,255,0), fill_rect) # vida verde
+        
+        
+class BasicEnemy(Enemy):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.image.load("assets/aviao.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (70, 70))
+        self.image = pygame.transform.rotate(self.image, 180)  # aponta para baixo
+        #self.image = pygame.Surface((40,40))
+        #self.image.fill((200,0,0))
+        self.health = 50
+        self.damage = 5
+        self.velocity = 3
+
+class ShooterEnemy(Enemy):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.image.load("assets/aviao.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (70, 70))
+        self.image = pygame.transform.rotate(self.image, 180)  # aponta para baixo
+        #self.image = pygame.Surface((40,40))
+        #self.image.fill((0,200,0))
+        self.health = 70
+        self.damage = 7
+        self.shoot_interval = 2000
+        self.last_shot = pygame.time.get_ticks()
+        
+
+    def update(self, player, projectiles_group, game, speed=None, damage=None):
+        super().update(player, projectiles_group, game, speed, damage)
+        now = pygame.time.get_ticks()
+        if now - self.last_shot > self.shoot_interval:
+            self.shoot(projectiles_group)
+            self.last_shot = now
+
+    def shoot(self, projectiles_group):
+        projectile = Projectile(self.rect.centerx,  self.rect.bottom, owner="enemy", velocity=(0, 10), damage=self.damage)
+        projectiles_group.add(projectile)
+
+class FastEnemy(Enemy):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.image.load("assets/aviao.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (70, 70))
+        self.image = pygame.transform.rotate(self.image, 180)  # aponta para baixo
+        #self.image = pygame.Surface((30,30))
+        #self.image.fill((0,0,200))
+        self.health = 40
+        self.damage = 6
+        self.speed_y = 6
+
+class TankEnemy(Enemy):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.image.load("assets/aviao.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (70, 70))
+        self.image = pygame.transform.rotate(self.image, 180)  # aponta para baixo
+        #self.image = pygame.Surface((60,60))
+        #self.image.fill((150,150,0))
+        self.health = 200
+        self.damage = 12
