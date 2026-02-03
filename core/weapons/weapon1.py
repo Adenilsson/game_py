@@ -5,9 +5,13 @@ from core.weapons.projectile import Projectile
 
 class Weapon1(BaseWeapon):
     
+   
+
     def update(self, player, projectiles_group):
+        self.shoot_sound = pygame.mixer.Sound("assets/sons/disparo_base.mp3")
         now = pygame.time.get_ticks()
         if now - self.last_shot > self.fire_rate:
+            self.shoot_sound.play()
             self.last_shot = now
             projectile = Projectile( 
                 x=self.owner.rect.centerx, 
@@ -17,9 +21,5 @@ class Weapon1(BaseWeapon):
                 color=(255,255,0), # amarelo
                 size=(10,20),
                 owner="enemy",
-               
-                
-                
-                
             ) 
             projectiles_group.add(projectile)

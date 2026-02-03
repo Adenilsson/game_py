@@ -14,11 +14,11 @@ class Weapon2(BaseWeapon):
        
     def update(self, player, projectiles_group):
         now = pygame.time.get_ticks()
-
+        self.shoot_sound = pygame.mixer.Sound("assets/sons/doble_shoot.mp3")
         # Dispara apenas se passou o intervalo
         if now - self.last_shot > self.fire_rate:
             self.last_shot = now
-
+            self.shoot_sound.play()
             # Cria um projétil "laser" que se move para baixo
             projectile = Projectile(
                 x=self.owner.rect.centerx,

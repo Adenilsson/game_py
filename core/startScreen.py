@@ -33,8 +33,11 @@ class StartScreen:
 
         waiting = True
         action = None
-
+        self.start_sound = pygame.mixer.Sound("assets/sons/introducao.mp3")
+        self.start_sound.play()
         while waiting:
+            
+            
             self.screen.blit(splash, (0,0))
             self.screen.blit(title_text, (WIDTH//2 - title_text.get_width()//2, HEIGHT//4))
 
