@@ -22,6 +22,7 @@ class Game:
         self.background = Background("assets/bf3.png", speed=3)
         
         self.last_spawn = pygame.time.get_ticks()
+        
         self.spawn_interval = 6000  # spawn a cada 2 segundos
         
         self.start_screen = StartScreen(self.screen)
@@ -66,8 +67,11 @@ class Game:
     def game_loop(self):
         running = True
         
+        
         while running:
             self.player.current_weapon.update(self.player, self.projectiles_group)
+            if(self.score > 20 ):
+                self.spawn_interval = 1000
             # --- Input ---
             self.clock.tick(FPS)
             keys = pygame.key.get_pressed()
