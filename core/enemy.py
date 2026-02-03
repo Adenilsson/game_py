@@ -85,7 +85,7 @@ class Enemy(pygame.sprite.Sprite):
         if self.health <= 0:
             self.health = 0
             self.alive = False
-            print("💥 Inimigo destruído!")
+            print(" Inimigo destruído!")
             if game:  # soma pontos antes de remover
                 game.score += self.score_value
             self.kill()

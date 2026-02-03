@@ -75,7 +75,7 @@ class Player(pygame.sprite.Sprite):
         self.health -= amount
         if self.health <= 0:
             self.health = 0
-            print("💀 Player morreu!")
+            print(" Player morreu!")
             self.alive = False
        
     

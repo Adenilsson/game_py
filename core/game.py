@@ -15,6 +15,12 @@ from core.game_over_screen import GameOverScreen
 class Game:
     def __init__(self):
         pygame.init()
+        #Controle de níveis
+        self.level = 1
+        self.level_up = False
+        self.level_message_time = 0
+        self.level_pause_duration = 3000  # 3 segundos sem spawn
+
         self.score = 0
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption("Meu Jogo Estruturado")
@@ -70,8 +76,34 @@ class Game:
         
         while running:
             self.player.current_weapon.update(self.player, self.projectiles_group)
-            if(self.score > 20 ):
+            if self.score >= 50 and self.level == 1:
+                self.level = 2
+                self.spawn_interval = 4000
+                self.level_up = True
+                self.level_message_time = pygame.time.get_ticks()
+
+            elif self.score >= 80 and self.level == 2:
+                self.level = 3
+                self.spawn_interval = 3000
+                self.level_up = True
+                self.level_message_time = pygame.time.get_ticks()
+
+            elif self.score >= 100 and self.level == 3:
+                self.level = 4
+                self.spawn_interval = 2000
+                self.level_up = True
+                self.level_message_time = pygame.time.get_ticks()
+            elif self.score >= 120 and self.level == 3:
+                self.level = 5
                 self.spawn_interval = 1000
+                self.level_up = True
+                self.level_message_time = pygame.time.get_ticks()
+            elif self.score >= 150 and self.level == 3:
+                self.level = 5
+                self.spawn_interval = 800
+                self.level_up = True
+                self.level_message_time = pygame.time.get_ticks()
+
             # --- Input ---
             self.clock.tick(FPS)
             keys = pygame.key.get_pressed()
@@ -86,11 +118,23 @@ class Game:
             self.player.update(keys)
             if keys[pygame.K_SPACE]:
                 self.player.shoot(self.projectiles_group)
+            
+            now = pygame.time.get_ticks()
+            if not self.level_up and now - self.last_spawn > self.spawn_interval:
+                self.spawn_enemy()
+                self.last_spawn = now
 
+            # Se o player acabou de subir de nível, aguarda alguns segundos
+            if self.level_up and now - self.level_message_time > self.level_pause_duration:
+                self.level_up = False
+
+
+            """
             now = pygame.time.get_ticks()
             if now - self.last_spawn > self.spawn_interval:
                 self.spawn_enemy()
                 self.last_spawn = now
+            """
 
             self.background.update()
             self.enemies.update(self.player, self.projectiles_group, self)
@@ -117,6 +161,10 @@ class Game:
                 enemy.draw_shadow(self.screen)
             self.projectiles_group.draw(self.screen)
             self.player.draw_weapons_hud(self.screen)
+            if self.level_up:
+                font = pygame.font.SysFont(None, 48)
+                level_text = font.render(f"LEVEL UP! Nível {self.level}", True, (255, 215, 0))
+                self.screen.blit(level_text, (WIDTH//2 - 100, HEIGHT//2 - 50))
 
             font = pygame.font.SysFont(None, 36)
             score_text = font.render(f"Score: {self.score}", True, (255,255,255))
@@ -127,7 +175,7 @@ class Game:
 
         # --- Game Over ---
         #pygame.quit()
-        print("💀 Game Over! Pontuação final:", self.score)
+        print(" Game Over! Pontuação final:", self.score)
         action = self.game_over_screen.run(self.score)
         if action == "restart":
             self.__init__()

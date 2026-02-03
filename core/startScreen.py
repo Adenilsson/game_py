@@ -70,7 +70,7 @@ class StartScreen:
                         active = False
                         color = color_inactive
                     if button_bg.collidepoint(event.pos) and self.player_name.strip() != "":
-                        print("================")
+                        
                         action = "play"
                         waiting = False
                 elif event.type == pygame.KEYDOWN:
