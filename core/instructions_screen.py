@@ -1,8 +1,17 @@
+"""
+Tela de instruções: mostra os controles e regras do jogo antes da
+partida começar.
+"""
+
 import pygame
 from config import WIDTH, HEIGHT
 
 class InstructionsScreen:
+    """Tela intermediária entre o menu inicial e o jogo, responsável por
+    apresentar os controles e as regras básicas ao jogador."""
+
     def __init__(self, screen):
+        """Monta os textos e botões (INICIAR/VOLTAR) usados pela tela."""
         self.screen = screen
         self.font_title = pygame.font.SysFont(None, 64)
         self.font_text = pygame.font.SysFont(None, 32)
@@ -34,6 +43,8 @@ class InstructionsScreen:
                                    self.back_button.width+40, self.back_button.height+20)
 
     def run(self):
+        """Exibe a tela em loop até o jogador clicar em INICIAR ou VOLTAR,
+        retornando a ação escolhida ("start"/"back")."""
         waiting = True
         action = None
         while waiting:

@@ -1,7 +1,18 @@
+"""
+Implementação alternativa de arma do jogador, com controle simples de
+munição e recarga.
+
+Nota: esta classe não é utilizada atualmente pelo jogo (o jogador usa as
+armas definidas em `basic_weapon.py`); o arquivo foi mantido apenas como
+referência histórica.
+"""
+
 import pygame
 from core.weapons.projectile import Projectile
 
 class PlayerWeapon:
+    """Arma genérica com munição limitada e disparo em rajada."""
+
     def __init__(self, owner, damage=10, fire_rate=300, ammo=None, burst=1):
         """
         owner: referência ao player
@@ -18,6 +29,8 @@ class PlayerWeapon:
         self.last_shot = 0
 
     def shoot(self, projectiles_group):
+        """Consome munição e dispara `self.burst` projéteis para cima,
+        respeitando a cadência de tiro definida em `fire_rate`."""
         now = pygame.time.get_ticks()
         if self.ammo > 0 and now - self.last_shot > self.fire_rate:
             self.ammo -= 1
@@ -25,10 +38,9 @@ class PlayerWeapon:
             print("Disparo! Munição restante:", self.ammo)
             if self.ammo == 0:
                 self.start_reload()
-                
+
         # Verifica intervalo entre disparos
         if now - self.last_shot < self.fire_rate:
-            
             return
 
         # Verifica munição
@@ -46,8 +58,7 @@ class PlayerWeapon:
                 damage=self.damage,
                 color=(255, 255, 0),
                 size=(6, 15),
-                owner= "player"
-                
+                owner="player"
             )
             projectiles_group.add(projectile)
 
