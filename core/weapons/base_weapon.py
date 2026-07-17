@@ -31,14 +31,17 @@ class BaseWeapon:
         self.reloading = True
         self.reload_start = 0
 
-    def update(self, player=None, projectiles_group=None):
+    def update(self, player=None, projectiles_group=None, enemies_group=None):
         """Ponto de extensão para lógica contínua da arma (ex.: recarga
         automática ou disparo por tempo). Por padrão não faz nada."""
         pass
 
-    def shoot(self, projectiles_group):
+    def shoot(self, projectiles_group, enemies_group=None):
         """Implementação padrão de disparo: respeita cadência e munição,
-        cria `self.burst` projéteis amarelos disparados para cima."""
+        cria `self.burst` projéteis amarelos disparados para cima.
+        `enemies_group` é aceito por compatibilidade com armas do
+        jogador que miram automaticamente (ex.: HomingShot), mas não é
+        usado por esta implementação padrão."""
         now = pygame.time.get_ticks()
 
         # Verifica intervalo entre disparos

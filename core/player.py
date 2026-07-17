@@ -5,8 +5,10 @@ troca de armas, vida e elementos de HUD (barra de vida e munição).
 
 import pygame
 from config import WIDTH, HEIGHT
-from core.weapons.basic_weapon import BasicWeapon, HeavyLaser, DoubleShot, TripolShot
 from config import WEAPON_COLORS
+from core.settings import settings
+from core.skins import skin_tier
+from core.weapon_loadouts import build_weapons
 
 
 class Player(pygame.sprite.Sprite):
@@ -33,13 +35,10 @@ class Player(pygame.sprite.Sprite):
         self.image_left = pygame.image.load(f"{skin_dir}/aviao_e.png").convert_alpha()
         self.image_left = pygame.transform.scale(self.image_left, (70, 70))
 
-        # Lista de armas disponíveis; o jogador alterna entre elas com a tecla F
-        self.weapons = [
-            BasicWeapon(self),
-            DoubleShot(self),
-            TripolShot(self),
-            HeavyLaser(self)
-        ]
+        # Arsenal de armas disponíveis, definido pelo tier da nave escolhida
+        # (quanto mais avançada a nave, mais opções de arma); o jogador
+        # alterna entre elas com a tecla F.
+        self.weapons = build_weapons(self, skin_tier(skin))
         self.current_weapon_index = 0
         self.weapon = self.weapons[self.current_weapon_index]
 
@@ -53,9 +52,10 @@ class Player(pygame.sprite.Sprite):
         self.max_health = 100
         self.health = self.max_health
 
-    def shoot(self, projectiles_group):
-        """Aciona o disparo da arma atualmente equipada."""
-        self.weapon.shoot(projectiles_group)
+    def shoot(self, projectiles_group, enemies_group=None):
+        """Aciona o disparo da arma atualmente equipada. `enemies_group`
+        é repassado para armas com mira automática (ex.: HomingShot)."""
+        self.weapon.shoot(projectiles_group, enemies_group)
 
     def change_weapon(self):
         """Avança para a próxima arma da lista, voltando à primeira
@@ -91,20 +91,22 @@ class Player(pygame.sprite.Sprite):
             self.alive = False
 
     def draw_health_bar(self, surface):
-        """Desenha a barra de vida (fundo vermelho + preenchimento verde
-        proporcional à vida atual) no canto superior esquerdo da tela."""
+        """Desenha a barra de vida (fundo vermelho + preenchimento na cor
+        de destaque escolhida pelo jogador) no canto superior esquerdo
+        da tela."""
         bar_width = 100
         bar_height = 10
         fill = (self.health / self.max_health) * bar_width
         outline_rect = pygame.Rect(10, 10, bar_width, bar_height)
         fill_rect = pygame.Rect(10, 10, fill, bar_height)
-        pygame.draw.rect(surface, (255, 0, 0), outline_rect)   # vermelho (fundo)
-        pygame.draw.rect(surface, (0, 255, 0), fill_rect)      # verde (vida atual)
+        pygame.draw.rect(surface, (255, 0, 0), outline_rect)          # vermelho (fundo)
+        pygame.draw.rect(surface, settings.accent_color, fill_rect)   # vida atual
 
     def draw_weapons_hud(self, surface):
         """Desenha um círculo colorido para cada arma do arsenal, destacando
-        a arma ativa com uma borda branca e exibindo a munição restante
-        (ou o símbolo de infinito quando a arma não consome munição)."""
+        a arma ativa com uma borda na cor de destaque escolhida pelo
+        jogador e exibindo a munição restante (ou o símbolo de infinito
+        quando a arma não consome munição)."""
         x_offset = 20
         y_offset = HEIGHT - 60
         radius = 20
@@ -115,9 +117,9 @@ class Player(pygame.sprite.Sprite):
 
             pygame.draw.circle(surface, color, pos, radius)
 
-            # borda branca na arma ativa
+            # borda na cor de destaque, na arma ativa
             if i == self.current_weapon_index:
-                pygame.draw.circle(surface, (255, 255, 255), pos, radius, 3)
+                pygame.draw.circle(surface, settings.accent_color, pos, radius, 3)
 
             # munição
             font = pygame.font.SysFont(None, 24)

@@ -17,6 +17,7 @@ from core.game_over_screen import GameOverScreen
 from core.enemy import BasicEnemy, ShooterEnemy, FastEnemy, TankEnemy, SpreaderEnemy
 from core.effects import Explosion
 from core.highscore import load_high_score, save_high_score
+from core.settings import settings
 
 
 class Game:
@@ -64,7 +65,7 @@ class Game:
         pygame.display.set_caption("Meu Jogo Estruturado")
         self.clock = pygame.time.Clock()
         self.background = Background("assets/imagens/fundos/bf3.png", speed=3)
-        self.explosion_sound = pygame.mixer.Sound("assets/sons/explosion.mp3")
+        self.explosion_sound = settings.load_sound("assets/sons/explosion.mp3")
 
         self.last_spawn = pygame.time.get_ticks()
         self.spawn_interval = 6000  # spawn a cada 2 segundos
@@ -120,7 +121,7 @@ class Game:
         """Cria o efeito visual de explosão na posição indicada e toca o
         som de explosão (usado quando um inimigo é destruído)."""
         self.effects_group.add(Explosion(position))
-        self.explosion_sound.play()
+        settings.play_sound(self.explosion_sound)
 
     def _draw_pause_overlay(self):
         """Desenha uma camada escura semitransparente com o texto
@@ -195,7 +196,7 @@ class Game:
                 # --- Update ---
                 self.player.update(keys)
                 if keys[pygame.K_SPACE]:
-                    self.player.shoot(self.projectiles_group)
+                    self.player.shoot(self.projectiles_group, self.enemies)
 
                 now = pygame.time.get_ticks()
                 self.enemies.update(self.player, self.projectiles_group, self, speed=self.enemy_speed, damage=self.enemy_damage)
@@ -271,8 +272,10 @@ class Game:
 
         print(" Game Over! Pontuação final:", self.score)
         action = self.game_over_screen.run(self.score, self.high_score)
-        if action == "restart":
+        if action in ("restart", "menu"):
+            # Ambas as opções encerram a partida atual; sem resetar aqui,
+            # score, inimigos, ondas e projéteis da partida anterior
+            # continuariam presentes na próxima vez que o jogador clicasse
+            # em JOGAR.
             self.__init__()
-            self.run()
-        elif action == "menu":
             self.run()

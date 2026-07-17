@@ -5,6 +5,7 @@ Arma de inimigo: feixe de laser vertical, longo e contínuo.
 import pygame
 from core.weapons.base_weapon import BaseWeapon
 from core.weapons.projectile import Projectile
+from core.settings import settings
 
 class Weapon2(BaseWeapon):
     """Dispara periodicamente um feixe de laser (projétil alto e fino)
@@ -18,8 +19,9 @@ class Weapon2(BaseWeapon):
         """
         super().__init__(owner, damage, fire_rate)
         # Carrega o som uma única vez (evita reler o arquivo do disco a
-        # cada quadro dentro de `update`)
-        self.shoot_sound = pygame.mixer.Sound("assets/sons/doble_shoot.mp3")
+        # cada quadro dentro de `update`); o volume é aplicado no
+        # momento de tocar, para respeitar ajustes feitos depois
+        self.shoot_sound = settings.load_sound("assets/sons/doble_shoot.mp3")
 
     def update(self, player, projectiles_group):
         """Verifica se o intervalo de disparo já passou e, em caso
@@ -28,7 +30,7 @@ class Weapon2(BaseWeapon):
         # Dispara apenas se passou o intervalo
         if now - self.last_shot > self.fire_rate:
             self.last_shot = now
-            self.shoot_sound.play()
+            settings.play_sound(self.shoot_sound)
             # Cria um projétil "laser" que se move para baixo
             projectile = Projectile(
                 x=self.owner.rect.centerx,

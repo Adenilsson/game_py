@@ -25,4 +25,6 @@ WEAPON_COLORS = {
     "DoubleShot": (0, 0, 255),       # azul
     "TripolShot": (128, 0, 128),     # roxo
     "HeavyLaser": (255, 0, 0),       # vermelho
+    "QuadShot": (0, 220, 150),       # verde-água
+    "HomingShot": (255, 60, 200),    # magenta
 }

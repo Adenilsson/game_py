@@ -1,24 +1,30 @@
 """
 Armas equipáveis pelo jogador: BasicWeapon (tiro único infinito),
-DoubleShot e TripolShot (rajadas com munição limitada e recarga) e
-HeavyLaser (tiro forte e lento com munição limitada).
-"""
+DoubleShot e TripolShot (rajadas com munição limitada e recarga),
+HeavyLaser (tiro forte e lento com munição limitada), QuadShot (rajada
+de quatro projéteis) e HomingShot (tiro teleguiado que mira o inimigo
+mais próximo). Cada uma aceita parâmetros opcionais de ajuste (dano,
+cadência, munição) para que o arsenal por nave (`core/weapon_loadouts.py`)
+possa configurar a mesma arma de forma diferente conforme o tier."""
 
+import math
 import pygame
 from core.weapons.base_weapon import BaseWeapon
 from core.weapons.projectile import Projectile
 
 class BasicWeapon(BaseWeapon):
-    """Arma inicial do jogador: tiro único, munição infinita, cadência alta."""
+    """Arma inicial do jogador: tiro único, munição infinita. A cadência
+    (`fire_rate`) é configurável para permitir naves com tiro mais ou
+    menos rápido."""
 
-    def __init__(self, owner):
-        super().__init__(owner, damage=30, fire_rate=100, ammo=None, burst=1)
+    def __init__(self, owner, damage=30, fire_rate=100):
+        super().__init__(owner, damage=damage, fire_rate=fire_rate, ammo=None, burst=1)
 
-    def update(self, player=None, projectiles_group=None):
+    def update(self, player=None, projectiles_group=None, enemies_group=None):
         """Sem lógica contínua (munição infinita, não precisa recarregar)."""
         pass
 
-    def shoot(self, projectiles_group):
+    def shoot(self, projectiles_group, enemies_group=None):
         """Dispara um único projétil verde para cima."""
         if not self.can_shoot():
             return
@@ -37,20 +43,14 @@ class BasicWeapon(BaseWeapon):
 
 
 class DoubleShot(BaseWeapon):
-    """Arma com munição limitada que dispara múltiplos projéteis
-    deslocados horizontalmente e recarrega automaticamente ao zerar."""
+    """Dispara exatamente dois projéteis lado a lado, com munição
+    limitada e recarga automática ao zerar."""
 
-    def __init__(self, owner):
-        super().__init__(owner, damage=25, fire_rate=400, ammo=20, burst=2)
-        # Definições específicas da DoubleShot
-        self.ammo_max = 20
-        # quantidade máxima de munição
-        self.ammo = self.ammo_max
-        # começa cheia
-        self.burst = 2
-        # quantos tiros por disparo
-        self.reload_time = 2000
-        # tempo de recarga em ms (2 segundos)
+    def __init__(self, owner, damage=25, fire_rate=400, ammo_max=20):
+        super().__init__(owner, damage=damage, fire_rate=fire_rate, ammo=ammo_max, burst=2)
+        self.ammo_max = ammo_max       # quantidade máxima de munição
+        self.ammo = self.ammo_max      # começa cheia
+        self.reload_time = 2000        # tempo de recarga em ms
         self.reloading = False
         self.reload_start = 0
 
@@ -59,20 +59,17 @@ class DoubleShot(BaseWeapon):
         self.reloading = True
         self.reload_start = pygame.time.get_ticks()
 
-    def shoot(self, projectiles_group):
-        """Dispara uma leque de projéteis azuis deslocados horizontalmente
-        e inicia a recarga automática assim que a munição zera."""
+    def shoot(self, projectiles_group, enemies_group=None):
+        """Dispara dois projéteis azuis lado a lado e inicia a recarga
+        automática assim que a munição zera."""
         if not self.can_shoot():
             return
         self.last_shot = pygame.time.get_ticks()
 
-        # dois projéteis, um pouco deslocados
         if self.ammo == 0:
             self.start_reload()
 
-        self.last_shot = pygame.time.get_ticks()
-
-        offsets = [-30, -15, 0, 15, 23]
+        offsets = [-15, 15]
         for offset in offsets:
             projectile = Projectile(
                 x=self.owner.rect.centerx + offset,
@@ -84,11 +81,8 @@ class DoubleShot(BaseWeapon):
                 owner="player",
             )
             projectiles_group.add(projectile)
-        if self.ammo == 0:
-            self.start_reload()
-        return True
 
-    def update(self, player=None, projectiles_group=None):
+    def update(self, player=None, projectiles_group=None, enemies_group=None):
         """Enquanto a arma está recarregando, verifica se o tempo de
         recarga já passou e, nesse caso, restaura a munição cheia."""
         if self.reloading:
@@ -100,26 +94,29 @@ class DoubleShot(BaseWeapon):
 
 
 class TripolShot(BaseWeapon):
-    """Variante de rajada tripla (três projéteis deslocados) com
-    munição limitada e recarga automática."""
+    """Rajada tripla (três projéteis deslocados) com munição limitada e
+    recarga automática."""
 
-    def __init__(self, owner):
-        super().__init__(owner, damage=25, fire_rate=400, ammo=20, burst=2)
+    def __init__(self, owner, damage=25, fire_rate=400, ammo_max=20):
+        super().__init__(owner, damage=damage, fire_rate=fire_rate, ammo=ammo_max, burst=3)
+        self.ammo_max = ammo_max
+        self.ammo = self.ammo_max
+        self.reload_time = 2000
+        self.reloading = False
+        self.reload_start = 0
 
     def start_reload(self):
         """Inicia o processo de recarga, zerando o cronômetro de recarga."""
         self.reloading = True
         self.reload_start = pygame.time.get_ticks()
 
-    def shoot(self, projectiles_group):
+    def shoot(self, projectiles_group, enemies_group=None):
         """Dispara três projéteis azuis (esquerda, centro, direita) e
         inicia a recarga automática assim que a munição zera."""
         if not self.can_shoot():
             return
-        if self.ammo == 0:
-            self.start_reload()
         self.last_shot = pygame.time.get_ticks()
-        # três projéteis, um pouco deslocados
+
         if self.ammo == 0:
             self.start_reload()
 
@@ -136,20 +133,34 @@ class TripolShot(BaseWeapon):
             )
             projectiles_group.add(projectile)
 
+    def update(self, player=None, projectiles_group=None, enemies_group=None):
+        """Enquanto a arma está recarregando, verifica se o tempo de
+        recarga já passou e, nesse caso, restaura a munição cheia."""
+        if self.reloading:
+            now = pygame.time.get_ticks()
+            if now - self.reload_start >= self.reload_time:
+                self.ammo = self.ammo_max
+                self.reloading = False
+
 
 class HeavyLaser(BaseWeapon):
     """Arma pesada: dano alto, cadência lenta e munição limitada,
     disparando um único projétil grande."""
 
-    def __init__(self, owner):
-        super().__init__(owner, damage=50, fire_rate=500, ammo=10, burst=1)
+    def __init__(self, owner, damage=50, fire_rate=500, ammo_max=10):
+        super().__init__(owner, damage=damage, fire_rate=fire_rate, ammo=ammo_max, burst=1)
+        self.ammo_max = ammo_max
+        self.ammo = self.ammo_max
+        self.reload_time = 2500
+        self.reloading = False
+        self.reload_start = 0
 
     def start_reload(self):
         """Inicia o processo de recarga, zerando o cronômetro de recarga."""
         self.reloading = True
         self.reload_start = pygame.time.get_ticks()
 
-    def shoot(self, projectiles_group):
+    def shoot(self, projectiles_group, enemies_group=None):
         """Dispara um único projétil vermelho de grande porte."""
         if not self.can_shoot():
             return
@@ -168,3 +179,134 @@ class HeavyLaser(BaseWeapon):
             owner="player",
         )
         projectiles_group.add(projectile)
+
+    def update(self, player=None, projectiles_group=None, enemies_group=None):
+        """Enquanto a arma está recarregando, verifica se o tempo de
+        recarga já passou e, nesse caso, restaura a munição cheia."""
+        if self.reloading:
+            now = pygame.time.get_ticks()
+            if now - self.reload_start >= self.reload_time:
+                self.ammo = self.ammo_max
+                self.reloading = False
+
+
+class QuadShot(BaseWeapon):
+    """Arma avançada: dispara em leque com quatro projéteis simultâneos.
+    Reservada às naves de tier mais alto (mais opções de arma)."""
+
+    def __init__(self, owner, damage=20, fire_rate=450, ammo_max=16):
+        super().__init__(owner, damage=damage, fire_rate=fire_rate, ammo=ammo_max, burst=4)
+        self.ammo_max = ammo_max
+        self.ammo = self.ammo_max
+        self.reload_time = 2200
+        self.reloading = False
+        self.reload_start = 0
+
+    def start_reload(self):
+        """Inicia o processo de recarga, zerando o cronômetro de recarga."""
+        self.reloading = True
+        self.reload_start = pygame.time.get_ticks()
+
+    def shoot(self, projectiles_group, enemies_group=None):
+        """Dispara quatro projéteis verde-água em leque e inicia a
+        recarga automática assim que a munição zera."""
+        if not self.can_shoot():
+            return
+        self.last_shot = pygame.time.get_ticks()
+
+        if self.ammo == 0:
+            self.start_reload()
+
+        offsets = [-30, -10, 10, 30]
+        for offset in offsets:
+            projectile = Projectile(
+                x=self.owner.rect.centerx + offset,
+                y=self.owner.rect.top,
+                velocity=(0, -11),
+                damage=self.damage,
+                color=(0, 220, 150),   # verde-água
+                size=(6, 16),
+                owner="player",
+            )
+            projectiles_group.add(projectile)
+
+    def update(self, player=None, projectiles_group=None, enemies_group=None):
+        """Enquanto a arma está recarregando, verifica se o tempo de
+        recarga já passou e, nesse caso, restaura a munição cheia."""
+        if self.reloading:
+            now = pygame.time.get_ticks()
+            if now - self.reload_start >= self.reload_time:
+                self.ammo = self.ammo_max
+                self.reloading = False
+
+
+class HomingShot(BaseWeapon):
+    """Arma exclusiva das naves de tier mais alto: dispara um único
+    projétil teleguiado que mira automaticamente o inimigo mais próximo
+    no momento do disparo. Sem inimigos por perto, dispara reto para
+    cima."""
+
+    def __init__(self, owner, damage=35, fire_rate=600, ammo_max=8):
+        super().__init__(owner, damage=damage, fire_rate=fire_rate, ammo=ammo_max, burst=1)
+        self.ammo_max = ammo_max
+        self.ammo = self.ammo_max
+        self.reload_time = 3000
+        self.reloading = False
+        self.reload_start = 0
+        self.speed = 12
+
+    def start_reload(self):
+        """Inicia o processo de recarga, zerando o cronômetro de recarga."""
+        self.reloading = True
+        self.reload_start = pygame.time.get_ticks()
+
+    def _velocity_towards_nearest(self, enemies_group):
+        """Calcula a velocidade na direção do inimigo mais próximo do
+        dono da arma. Retorna None se não houver nenhum inimigo vivo."""
+        if not enemies_group:
+            return None
+        nearest = min(
+            enemies_group,
+            key=lambda e: (e.rect.centerx - self.owner.rect.centerx) ** 2
+            + (e.rect.centery - self.owner.rect.centery) ** 2,
+            default=None,
+        )
+        if nearest is None:
+            return None
+        dx = nearest.rect.centerx - self.owner.rect.centerx
+        dy = nearest.rect.centery - self.owner.rect.centery
+        length = math.hypot(dx, dy) or 1
+        return (dx / length * self.speed, dy / length * self.speed)
+
+    def shoot(self, projectiles_group, enemies_group=None):
+        """Dispara um projétil magenta mirado no inimigo mais próximo
+        (ou reto para cima, se não houver alvo) e inicia a recarga
+        automática assim que a munição zera."""
+        if not self.can_shoot():
+            return
+        self.last_shot = pygame.time.get_ticks()
+
+        if self.ammo == 0:
+            self.start_reload()
+
+        velocity = self._velocity_towards_nearest(enemies_group) or (0, -self.speed)
+
+        projectile = Projectile(
+            x=self.owner.rect.centerx,
+            y=self.owner.rect.top,
+            velocity=velocity,
+            damage=self.damage,
+            color=(255, 60, 200),   # magenta
+            size=(9, 9),
+            owner="player",
+        )
+        projectiles_group.add(projectile)
+
+    def update(self, player=None, projectiles_group=None, enemies_group=None):
+        """Enquanto a arma está recarregando, verifica se o tempo de
+        recarga já passou e, nesse caso, restaura a munição cheia."""
+        if self.reloading:
+            now = pygame.time.get_ticks()
+            if now - self.reload_start >= self.reload_time:
+                self.ammo = self.ammo_max
+                self.reloading = False
