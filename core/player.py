@@ -10,20 +10,28 @@ from core.settings import settings
 from core.skins import skin_tier
 from core.weapon_loadouts import build_weapons
 
+STARTING_LIVES = 2  # quantas vidas o jogador tem ao começar a partida
+RESPAWN_INVULNERABILITY_MS = 2000  # tempo imune a dano logo apos reaparecer
+
 
 class Player(pygame.sprite.Sprite):
     """Nave do jogador. Controla movimento, disparo, troca de armas,
     dano recebido e desenho dos elementos de HUD associados a ela."""
 
-    def __init__(self, skin="player_1"):
+    def __init__(self, skin="player_1", name=""):
         """Carrega os sprites da nave (parado, virando à esquerda/direita)
         a partir da pasta de skin escolhida em `assets/imagens/naves/player/`,
         monta o arsenal de armas disponíveis e define posição inicial e vida.
 
         skin: nome da subpasta com os sprites da nave (ex.: "player_1",
         "player_2"), escolhida pelo jogador na tela inicial.
+        name: nome digitado pelo jogador na tela inicial, usado para
+        identificá-lo durante partidas cooperativas (ver `draw_name_tag`).
         """
         super().__init__()
+        self.skin = skin  # guardado para o modo cooperativo em rede reconstruir a nave
+        self.name = name
+
         # Carrega sprite da nave de acordo com a skin escolhida
         skin_dir = f"assets/imagens/naves/player/{skin}"
         self.image_idle = pygame.image.load(f"{skin_dir}/aviao_0.png").convert_alpha()
@@ -48,9 +56,11 @@ class Player(pygame.sprite.Sprite):
 
         self.speed = 5
 
-        # Vida do jogador
+        # Vida e vidas do jogador
         self.max_health = 100
         self.health = self.max_health
+        self.lives = STARTING_LIVES
+        self.invulnerable_until = 0  # timestamp (pygame.time.get_ticks()) até quando ignora dano
 
     def shoot(self, projectiles_group, enemies_group=None):
         """Aciona o disparo da arma atualmente equipada. `enemies_group`
@@ -82,13 +92,39 @@ class Player(pygame.sprite.Sprite):
         # Atualiza a arma (ex.: progresso de recarga)
         self.current_weapon.update()
 
+        # Pisca a nave enquanto durar a invencibilidade pós-respawn
+        now = pygame.time.get_ticks()
+        if now < self.invulnerable_until:
+            self.image.set_alpha(120 if (now // 150) % 2 == 0 else 255)
+        else:
+            self.image.set_alpha(255)
+
     def take_damage(self, amount):
-        """Reduz a vida do jogador e marca a nave como morta ao chegar a zero."""
+        """Reduz a vida do jogador (ignorando dano durante a breve
+        invencibilidade pós-respawn). Ao chegar a zero, consome uma
+        vida: se ainda restarem vidas, a nave reaparece com vida cheia;
+        sem vidas restantes, marca a nave como destruída de vez (fim de
+        jogo, para esse jogador)."""
+        if pygame.time.get_ticks() < self.invulnerable_until:
+            return
         self.health -= amount
         if self.health <= 0:
             self.health = 0
-            print(" Player morreu!")
-            self.alive = False
+            self.lives -= 1
+            if self.lives > 0:
+                self._respawn()
+            else:
+                print(" Player morreu!")
+                self.alive = False
+
+    def _respawn(self):
+        """Restaura a vida cheia, reposiciona a nave no ponto inicial e
+        concede uma breve invencibilidade — usado quando o jogador ainda
+        tem vidas restantes após a nave ser destruída."""
+        print(f" Nave destruída! Vidas restantes: {self.lives}")
+        self.health = self.max_health
+        self.rect.center = (WIDTH // 2, HEIGHT - 60)
+        self.invulnerable_until = pygame.time.get_ticks() + RESPAWN_INVULNERABILITY_MS
 
     def draw_health_bar(self, surface):
         """Desenha a barra de vida (fundo vermelho + preenchimento na cor
@@ -101,6 +137,44 @@ class Player(pygame.sprite.Sprite):
         fill_rect = pygame.Rect(10, 10, fill, bar_height)
         pygame.draw.rect(surface, (255, 0, 0), outline_rect)          # vermelho (fundo)
         pygame.draw.rect(surface, settings.accent_color, fill_rect)   # vida atual
+
+    def draw_lives(self, surface):
+        """Mostra a quantidade de vidas restantes, logo abaixo da barra
+        de vida principal."""
+        font = pygame.font.SysFont(None, 28)
+        text = font.render(f"Vidas: {self.lives}", True, (255, 255, 255))
+        surface.blit(text, (10, 26))
+
+    def draw_mini_health_bar(self, surface):
+        """Desenha uma barra de vida pequena logo acima da nave, no
+        mesmo estilo usado por `Enemy.draw_health_bar`. Usada para
+        mostrar a vida de outros jogadores no modo cooperativo, sem
+        ocupar o HUD principal (reservado ao jogador local)."""
+        bar_width = 50
+        bar_height = 6
+        fill = (self.health / self.max_health) * bar_width if self.max_health else 0
+        outline_rect = pygame.Rect(self.rect.centerx - bar_width // 2, self.rect.top - 12, bar_width, bar_height)
+        fill_rect = pygame.Rect(self.rect.centerx - bar_width // 2, self.rect.top - 12, fill, bar_height)
+        pygame.draw.rect(surface, (255, 0, 0), outline_rect)
+        pygame.draw.rect(surface, settings.accent_color, fill_rect)
+
+    def draw_name_tag(self, surface, label=None, color=(255, 255, 255)):
+        """Desenha uma etiqueta com o nome do jogador logo acima da nave
+        (com um fundo escuro semitransparente, para ficar legível sobre
+        qualquer cenário). Usada em partidas cooperativas para facilitar
+        identificar qual nave é de qual jogador; `label` permite
+        sobrescrever o texto exibido (ex.: "Você" para a nave local)."""
+        text = label if label is not None else self.name
+        if not text:
+            return
+        font = pygame.font.SysFont(None, 22)
+        text_surface = font.render(text, True, color)
+        text_rect = text_surface.get_rect(midbottom=(self.rect.centerx, self.rect.top - 14))
+
+        background = pygame.Surface((text_rect.width + 10, text_rect.height + 4), pygame.SRCALPHA)
+        background.fill((0, 0, 0, 140))
+        surface.blit(background, (text_rect.x - 5, text_rect.y - 2))
+        surface.blit(text_surface, text_rect)
 
     def draw_weapons_hud(self, surface):
         """Desenha um círculo colorido para cada arma do arsenal, destacando

@@ -11,7 +11,7 @@ class Weapon2(BaseWeapon):
     """Dispara periodicamente um feixe de laser (projétil alto e fino)
     para baixo, tocando um efeito sonoro a cada disparo."""
 
-    def __init__(self, owner, damage=20, fire_rate=2000):
+    def __init__(self, owner, damage=20, fire_rate=2800):
         """
         owner: inimigo que possui a arma
         damage: dano causado pelo laser

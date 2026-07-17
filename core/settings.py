@@ -1,15 +1,17 @@
 """
 Configurações do jogador (volume dos efeitos sonoros e cor de destaque
-da interface), persistidas em `settings.json` na raiz do projeto e
-compartilhadas por todo o jogo através da instância `settings`.
+da interface), persistidas em `settings.json` na raiz do projeto (ou ao
+lado do executável, quando empacotado) e compartilhadas por todo o
+jogo através da instância `settings`.
 """
 
 import json
 import os
 import weakref
 import pygame
+from core.app_paths import get_app_dir
 
-SETTINGS_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "settings.json")
+SETTINGS_FILE = os.path.join(get_app_dir(), "settings.json")
 
 DEFAULT_VOLUME = 0.7
 DEFAULT_ACCENT_COLOR = (60, 190, 100)  # verde

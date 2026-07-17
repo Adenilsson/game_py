@@ -12,11 +12,13 @@ class Weapon1(BaseWeapon):
     """Dispara periodicamente um único projétil amarelo para baixo,
     tocando um efeito sonoro a cada disparo."""
 
-    def __init__(self, owner):
+    def __init__(self, owner, damage=10, fire_rate=800):
         """Carrega o som de disparo uma única vez (evita reler o arquivo
         do disco a cada quadro dentro de `update`). O volume é aplicado
-        no momento de tocar, para respeitar ajustes feitos depois."""
-        super().__init__(owner)
+        no momento de tocar, para respeitar ajustes feitos depois.
+
+        fire_rate: intervalo mínimo entre disparos (ms)."""
+        super().__init__(owner, damage, fire_rate)
         self.shoot_sound = settings.load_sound("assets/sons/disparo_base.mp3")
 
     def update(self, player, projectiles_group):

@@ -11,7 +11,7 @@ class Weapon4(BaseWeapon):
     """Dispara periodicamente três projéteis laranjas em leque
     (esquerda, centro, direita) na direção do jogador."""
 
-    def __init__(self, owner, damage=10, fire_rate=1000):
+    def __init__(self, owner, damage=10, fire_rate=1500):
         """
         owner: inimigo que possui a arma
         damage: dano de cada esfera

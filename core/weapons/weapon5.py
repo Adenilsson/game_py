@@ -12,7 +12,7 @@ class Weapon5(BaseWeapon):
     """Dispara periodicamente um projétil magenta calculando a direção
     exata até a posição atual do jogador."""
 
-    def __init__(self, owner, damage=15, fire_rate=1500):
+    def __init__(self, owner, damage=15, fire_rate=2200):
         """
         owner: inimigo que possui a arma
         damage: dano do disparo

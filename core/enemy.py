@@ -24,6 +24,20 @@ def _tinted(image, color):
     return tinted_image
 
 
+# Cor de tingimento de cada subclasse, indexada pelo nome da classe. É a
+# mesma tabela usada nos `__init__` abaixo; exposta aqui também para que
+# o modo cooperativo em rede (`core/network/ghosts.py`) consiga desenhar
+# inimigos "fantasma" (simulados só no host) sem precisar instanciar a
+# classe Enemy inteira (o que criaria armas e carregaria sons à toa).
+ENEMY_TINTS = {
+    "BasicEnemy": None,
+    "ShooterEnemy": (150, 255, 255),
+    "FastEnemy": (255, 150, 255),
+    "TankEnemy": (255, 220, 130),
+    "SpreaderEnemy": (255, 190, 120),
+}
+
+
 class Enemy(pygame.sprite.Sprite):
     """Nave inimiga base. Controla vida, movimento (com componente
     aleatório configurável por subclasse), arma equipada e pontuação
@@ -92,13 +106,40 @@ class Enemy(pygame.sprite.Sprite):
         self.speed_y = self.base_speed_y
         self.speed_x = random.choice(self.speed_x_choices)
 
-    def update(self, player, projectiles_group, game, speed=None, damage=None):
+    def _nearest_player(self, players):
+        """Aceita tanto um único `Player` (modo solo) quanto uma lista de
+        jogadores (modo cooperativo) e retorna o mais próximo deste
+        inimigo, para que armas com mira (ex.: Weapon5) sempre acertem
+        alguém sensato mesmo com mais de um jogador na partida."""
+        if players is None:
+            return None
+        if not isinstance(players, (list, tuple, set)):
+            return players  # já é um único Player
+
+        candidates = list(players)
+        if not candidates:
+            return None
+        if len(candidates) == 1:
+            return candidates[0]
+        return min(
+            candidates,
+            key=lambda p: (p.rect.centerx - self.rect.centerx) ** 2
+            + (p.rect.centery - self.rect.centery) ** 2,
+        )
+
+    def update(self, players, projectiles_group, game, speed=None, damage=None):
         """Move o inimigo, resolve colisões com projéteis do jogador,
         reposiciona a nave ao sair da tela por baixo e atualiza a arma
-        equipada. `speed` soma um bônus de dificuldade (definido pelo
+        equipada (mirando o jogador vivo mais próximo, no modo
+        cooperativo). `speed` soma um bônus de dificuldade (definido pelo
         nível atual) sobre a velocidade base própria do inimigo, para que
         cada tipo continue distinguível mesmo com o avanço de nível;
-        `damage` ajusta o dano da arma equipada."""
+        `damage` ajusta o dano da arma equipada.
+
+        `players`: um único `Player` (compatibilidade) ou uma lista de
+        jogadores vivos — nesse caso, a arma mira automaticamente o mais
+        próximo deste inimigo."""
+        player = self._nearest_player(players)
         if speed is not None:
             self.speed_y = self.base_speed_y + max(0, speed - 2)
         if damage is not None:

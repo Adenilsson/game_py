@@ -32,11 +32,15 @@ python motor.py
 
 ## Como jogar
 
-1. Na tela inicial, escolha sua nave de combate no carrossel (use as setas `<`/`>` na tela, ou as teclas `←`/`→` do teclado), informe um nome e clique em **JOGAR**. Naves ainda bloqueadas aparecem em silhueta, com o recorde necessário para desbloqueá-las (veja [Desbloqueio de naves](#desbloqueio-de-naves)).
-2. Leia as instruções e clique em **INICIAR**.
-3. Destrua os inimigos para ganhar pontos e evite colisões com naves e projéteis inimigos.
-4. A cada onda (*wave*) vencida ou marco de pontuação atingido, o jogo sobe de nível: inimigos ficam mais rápidos, mais fortes e aparecem com mais frequência.
-5. Ao perder toda a vida, a tela de **Game Over** mostra a pontuação final, o recorde e permite reiniciar a partida ou voltar ao menu.
+1. Escolha o modo de jogo: **Jogar sozinho**, **Hospedar partida (LAN)** ou **Entrar em partida (LAN)** — veja [Modo cooperativo em LAN](#modo-cooperativo-em-lan).
+2. Na tela inicial, escolha sua nave de combate no carrossel (use as setas `<`/`>` na tela, ou as teclas `←`/`→` do teclado), informe um nome e clique em **JOGAR**. Naves ainda bloqueadas aparecem em silhueta, com o recorde necessário para desbloqueá-las (veja [Desbloqueio de naves](#desbloqueio-de-naves)).
+3. Leia as instruções e clique em **INICIAR**.
+4. Destrua os inimigos para ganhar pontos e evite colisões com naves e projéteis inimigos.
+5. A cada onda (*wave*) vencida ou marco de pontuação atingido, o jogo sobe de nível: inimigos ficam mais rápidos, mais fortes e aparecem com mais frequência.
+6. Você começa com **2 vidas** (contador "Vidas" no HUD, abaixo da barra de vida). Ao perder toda a vida, a nave reaparece com vida cheia e alguns segundos de invencibilidade (pisca durante esse período), consumindo uma vida — só quando as vidas acabam é que a nave é destruída de vez. No cooperativo, a partida só termina quando **todos** os jogadores esgotarem suas vidas.
+7. De tempos em tempos cai uma **caixa de vida extra** (paraquedas) do topo da tela — encoste nela para ganhar uma vida antes que ela saia da tela por baixo.
+8. Também caem **caixas de munição** coloridas (mesmo estilo paraquedas): cada cor recarrega totalmente a munição de uma arma específica — veja [Caixas de munição](#caixas-de-munição).
+9. Ao esgotar as vidas, a tela de **Game Over** mostra a pontuação final, o recorde e permite reiniciar a partida ou voltar ao menu.
 
 O recorde (maior pontuação já alcançada) fica salvo em `highscore.txt`, na raiz do projeto, e é exibido durante a partida e na tela de game over.
 
@@ -78,6 +82,40 @@ Cada nave tem seu próprio arsenal de armas (`core/weapon_loadouts.py`), de acor
 
 Naves de tier mais alto mantêm todas as armas dos tiers anteriores e ganham uma arma nova exclusiva.
 
+### Caixas de munição
+
+Além da recarga automática de cada arma, caixas de munição (`core/ammo_box.py`) caem periodicamente (a cada 20–30s) e recarregam totalmente a munição de uma arma específica ao serem tocadas. A cor da caixa segue a mesma paleta de `config.WEAPON_COLORS` usada no HUD de armas:
+
+| Cor da caixa (`assets/imagens/extras/municao_<cor>.png`) | Arma recarregada |
+|---|---|
+| `blue` | DoubleShot |
+| `red` | HeavyLaser |
+
+O jogo só sorteia cores cuja arma correspondente algum jogador da partida realmente possui (não adianta soltar munição de uma arma que ninguém tem ainda). Para adicionar um novo tipo, basta soltar a imagem `municao_<cor>.png` em `assets/imagens/extras/` e cadastrar a cor em `AMMO_BOX_WEAPON_MAP` (`core/ammo_box.py`) — nenhuma outra mudança é necessária.
+
+### Modo cooperativo em LAN
+
+O jogo pode ser jogado por duas pessoas na mesma rede local, cooperando contra as mesmas ondas de inimigos. Arquitetura: **host autoritativo** — uma instância (quem hospeda) roda a simulação inteira (inimigos, colisões, ondas) e transmite o estado do mundo para os clientes a cada quadro; os clientes só enviam suas teclas e desenham o que recebem, sem simular nada por conta própria. Isso evita qualquer risco de desincronia entre as telas.
+
+**Para hospedar:**
+1. Escolha **HOSPEDAR PARTIDA (LAN)** na tela inicial.
+2. O jogo mostra o seu IP local — informe esse endereço ao outro jogador.
+3. Escolha sua nave e clique em JOGAR normalmente; o outro jogador aparece assim que entrar.
+
+**Para entrar:**
+1. Escolha **ENTRAR EM PARTIDA (LAN)**.
+2. Digite o IP informado por quem hospedou e clique em CONECTAR.
+3. Escolha sua nave e clique em JOGAR normalmente.
+
+**Identificando quem é quem:** com mais de um jogador na partida, cada nave ganha uma etiqueta com o nome digitado na tela inicial logo acima dela — a sua aparece como **"Você"** na cor de destaque escolhida nas configurações, e a do(s) outro(s) jogador(es) mostra o nome deles em branco, junto com uma barrinha de vida. Em partidas solo essas etiquetas não aparecem (não há com quem confundir).
+
+Detalhes técnicos e limitações da v1:
+- Transporte: sockets TCP (porta `5555` por padrão), mensagens JSON com framing por tamanho (`core/network/protocol.py`).
+- `core/network/host.py` (`GameServer`) e `core/network/client.py` (`GameClient`) cuidam da comunicação; `core/network/ghosts.py` desenha inimigos/projéteis do host no lado do cliente sem duplicar a lógica de jogo.
+- A pausa (`ESC`) só está disponível em partidas solo.
+- Suporta 1 host + 1 cliente por partida nesta versão; sem reconexão automática se alguém cair.
+- Ambas as máquinas precisam da mesma versão do jogo/assets. O firewall do Windows pode pedir liberação da porta na primeira vez que hospedar.
+
 ## Estrutura do projeto
 
 ```
@@ -88,6 +126,7 @@ game_py/
 │
 ├── assets/                         # Imagens e sons usados pelo jogo
 │   ├── imagens/
+│   │   ├── extras/                 # Itens especiais (vida_1.png, municao_<cor>.png)
 │   │   ├── fundos/                 # Planos de fundo (rolagem)
 │   │   ├── naves/
 │   │   │   ├── inimigos/           # Sprite das naves inimigas
@@ -100,8 +139,12 @@ game_py/
     ├── player.py                   # Classe Player: nave do jogador
     ├── enemy.py                    # Classe Enemy e variações (Basic/Shooter/Fast/Tank/Spreader)
     ├── effects.py                  # Efeitos visuais (explosão ao destruir inimigo)
+    ├── powerup.py                  # Caixa de vida extra que cai periodicamente
+    ├── ammo_box.py                 # Caixas de munição (recarregam uma arma específica)
     ├── highscore.py                # Persistência do recorde em highscore.txt
     ├── settings.py                 # Preferências do jogador (volume, cor de destaque) em settings.json
+    ├── mode_select_screen.py       # Tela de escolha do modo (solo/hospedar/entrar em LAN)
+    ├── join_screen.py              # Tela de entrada de IP para conectar num host
     ├── startScreen.py              # Tela inicial (menu, seleção de nave, botão de configurações)
     ├── settings_screen.py          # Tela de configurações (volume e cor de destaque)
     ├── instructions_screen.py      # Tela de instruções
@@ -109,6 +152,12 @@ game_py/
     │
     ├── skins.py                    # Descoberta/ordenação das naves e cálculo do "tier" de cada uma
     ├── weapon_loadouts.py          # Arsenal de armas do jogador por tier da nave
+    │
+    ├── network/                    # Modo cooperativo em LAN
+    │   ├── protocol.py              # Framing/serialização das mensagens (JSON com tamanho na frente)
+    │   ├── host.py                  # GameServer: aceita clientes, recebe input, transmite o snapshot
+    │   ├── client.py                # GameClient: conecta no host, manda input, recebe snapshot
+    │   └── ghosts.py                # Sprites "fantasma" (inimigos/projéteis) desenhados só pelo cliente
     │
     └── weapons/                    # Sistema de armas
         ├── base_weapon.py          # Classe base de todas as armas
@@ -120,7 +169,8 @@ game_py/
 
 ## Principais classes
 
-- **`Game`** (`core/game.py`) — orquestra telas, loop principal, sistema de níveis/ondas e colisões.
+- **`Game`** (`core/game.py`) — orquestra telas, loop principal, sistema de níveis/ondas e colisões. Guarda os jogadores em `self.players` (dict `id -> Player`), o que permite tanto o modo solo quanto o cooperativo; `self.network_role` (`None`/`"host"`/`"client"`) decide qual loop rodar.
+- **`GameServer`**/**`GameClient`** (`core/network/`) — comunicação do modo cooperativo em LAN (ver [Modo cooperativo em LAN](#modo-cooperativo-em-lan)).
 - **`Player`** (`core/player.py`) — nave do jogador: movimento, troca de armas, vida e HUD. O arsenal é montado por `build_weapons` (`core/weapon_loadouts.py`) de acordo com o tier da nave escolhida (ver [Arsenal por nave](#arsenal-por-nave)).
 - **`Enemy`** e subclasses (`core/enemy.py`) — cada tipo tem vida, dano, arma e um perfil de movimento (velocidade + aleatoriedade) próprios:
 
@@ -144,8 +194,8 @@ game_py/
 
 O jogo combina dois sistemas de dificuldade, controlados em `Game`:
 
-- **Níveis** (`self.levels`): a cada marco de pontuação, aumentam a velocidade/dano dos inimigos e reduzem o intervalo de spawn.
-- **Ondas** (`self.waves`): definem quantos inimigos de cada tipo aparecem antes de avançar para a próxima onda (atualmente 5 ondas, introduzindo um novo tipo de inimigo a cada uma).
+- **Níveis** (`self.levels`): a cada marco de pontuação, aumentam a velocidade/dano dos inimigos e reduzem o intervalo de spawn. Também controlam quantos inimigos aparecem de uma só vez a cada spawn (`Game._spawn_batch_size()`): 2 no início, chegando a 6 simultâneos no nível mais alto.
+- **Ondas** (`self.waves`): definem quantos inimigos de cada tipo aparecem antes de avançar para a próxima onda (atualmente 5 ondas, de 15 a 32 inimigos no total; cada onda já combina pelo menos dois tipos de inimigo — logo, duas armas diferentes — desde a primeira, chegando aos 5 tipos/armas a partir da onda 4; ondas além da 5ª são geradas automaticamente, cada vez mais difíceis).
 
 ## Build (executável)
 
