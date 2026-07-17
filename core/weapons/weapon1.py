@@ -15,7 +15,7 @@ class Weapon1(BaseWeapon):
         """Carrega o som de disparo uma única vez (evita reler o arquivo
         do disco a cada quadro dentro de `update`)."""
         super().__init__(owner)
-        self.shoot_sound = pygame.mixer.Sound("assets/sons/disparo_base.mp3")
+        self.shoot_sound = pygame.mixer.Sound("assets/sons/disparo_base.ogg")
 
     def update(self, player, projectiles_group):
         """Verifica se o intervalo de disparo (`fire_rate`) já passou e,

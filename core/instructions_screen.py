@@ -3,6 +3,7 @@ Tela de instruções: mostra os controles e regras do jogo antes da
 partida começar.
 """
 
+import asyncio
 import pygame
 from config import WIDTH, HEIGHT
 
@@ -42,7 +43,7 @@ class InstructionsScreen:
         self.back_bg = pygame.Rect(self.back_button.x-20, self.back_button.y-10,
                                    self.back_button.width+40, self.back_button.height+20)
 
-    def run(self):
+    async def run(self):
         """Exibe a tela em loop até o jogador clicar em INICIAR ou VOLTAR,
         retornando a ação escolhida ("start"/"back")."""
         waiting = True
@@ -80,4 +81,6 @@ class InstructionsScreen:
                     elif self.back_bg.collidepoint(event.pos):
                         action = "back"
                         waiting = False
+
+            await asyncio.sleep(0)
         return action

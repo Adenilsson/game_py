@@ -8,6 +8,11 @@
 WIDTH = 600
 HEIGHT = 800
 
+# Limite inferior da área jogável: a nave do jogador não pode descer além
+# desta linha, que fica logo acima do HUD de armas (ver Player.update e
+# Player.draw_weapons_hud)
+PLAY_AREA_BOTTOM = HEIGHT - 90
+
 # Quadros por segundo (limita o clock do loop principal em core/game.py)
 FPS = 60
 

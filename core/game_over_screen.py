@@ -3,6 +3,7 @@ Tela de fim de jogo: exibe a pontuação final e os botões para
 reiniciar a partida ou voltar ao menu principal.
 """
 
+import asyncio
 import pygame
 from config import WIDTH, HEIGHT
 
@@ -17,7 +18,7 @@ class GameOverScreen:
         self.font_text = pygame.font.SysFont(None, 48)
         self.font_button = pygame.font.SysFont(None, 48)
 
-    def run(self, final_score, high_score=None):
+    async def run(self, final_score, high_score=None):
         """Exibe a tela de game over em loop até o jogador clicar em
         REINICIAR ou MENU, retornando a ação escolhida ("restart"/"menu").
         Se `high_score` for informado, mostra também o recorde atual e
@@ -77,5 +78,7 @@ class GameOverScreen:
                     elif menu_bg.collidepoint(event.pos):
                         action = "menu"
                         waiting = False
+
+            await asyncio.sleep(0)
 
         return action

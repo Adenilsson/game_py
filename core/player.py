@@ -4,7 +4,7 @@ troca de armas, vida e elementos de HUD (barra de vida e munição).
 """
 
 import pygame
-from config import WIDTH, HEIGHT
+from config import WIDTH, HEIGHT, PLAY_AREA_BOTTOM
 from core.weapons.basic_weapon import BasicWeapon, HeavyLaser, DoubleShot, TripolShot
 from config import WEAPON_COLORS
 
@@ -45,7 +45,7 @@ class Player(pygame.sprite.Sprite):
 
         # Começa com a imagem padrão
         self.image = self.image_idle
-        self.rect = self.image.get_rect(center=(WIDTH // 2, HEIGHT - 60))
+        self.rect = self.image.get_rect(midbottom=(WIDTH // 2, PLAY_AREA_BOTTOM))
 
         self.speed = 5
 
@@ -77,7 +77,7 @@ class Player(pygame.sprite.Sprite):
             self.image = self.image_idle
         if keys[pygame.K_w] and self.rect.top > 0:
             self.rect.y -= self.speed
-        if keys[pygame.K_s] and self.rect.bottom < HEIGHT:
+        if keys[pygame.K_s] and self.rect.bottom < PLAY_AREA_BOTTOM:
             self.rect.y += self.speed
         # Atualiza a arma (ex.: progresso de recarga)
         self.current_weapon.update()

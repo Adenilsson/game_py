@@ -4,6 +4,7 @@ principal de jogo, sistema de níveis/ondas (waves) de inimigos e
 resolução de colisões entre jogador, inimigos e projéteis.
 """
 
+import asyncio
 import pygame
 import random
 from config import WIDTH, HEIGHT, FPS, BLACK
@@ -64,7 +65,7 @@ class Game:
         pygame.display.set_caption("Meu Jogo Estruturado")
         self.clock = pygame.time.Clock()
         self.background = Background("assets/imagens/fundos/bf3.png", speed=3)
-        self.explosion_sound = pygame.mixer.Sound("assets/sons/explosion.mp3")
+        self.explosion_sound = pygame.mixer.Sound("assets/sons/explosion.ogg")
 
         self.last_spawn = pygame.time.get_ticks()
         self.spawn_interval = 6000  # spawn a cada 2 segundos
@@ -137,24 +138,24 @@ class Game:
         hint = hint_font.render("Pressione ESC para continuar", True, (200, 200, 200))
         self.screen.blit(hint, (WIDTH // 2 - hint.get_width() // 2, HEIGHT // 2 + 40))
 
-    def run(self):
+    async def run(self):
         """Exibe a tela inicial (onde o jogador escolhe a nave e informa o
         nome) e, conforme a escolha do jogador, avança para as instruções
         e depois para o loop principal do jogo."""
-        action = self.start_screen.run()
+        action = await self.start_screen.run()
         if action == "play":
             if self.player is not None:  # remove a nave de uma tentativa anterior
                 self.all_sprites.remove(self.player)
             self.player = Player(self.start_screen.selected_skin)
             self.all_sprites.add(self.player)
 
-            instr_action = self.instructions_screen.run()
+            instr_action = await self.instructions_screen.run()
             if instr_action == "start":
-                self.game_loop()  # inicia o jogo
+                await self.game_loop()  # inicia o jogo
             elif instr_action == "back":  # volta para tela inicial
-                self.run()
+                await self.run()
 
-    def game_loop(self):
+    async def game_loop(self):
         """Loop principal da partida: processa entrada do jogador, atualiza
         jogador/inimigos/projéteis, verifica progressão de nível e ondas,
         resolve colisões e renderiza a cena a cada quadro até o jogador
@@ -263,6 +264,7 @@ class Game:
                 self._draw_pause_overlay()
 
             pygame.display.flip()
+            await asyncio.sleep(0)
 
         # --- Game Over ---
         if self.score > self.high_score:
@@ -270,9 +272,9 @@ class Game:
             save_high_score(self.high_score)
 
         print(" Game Over! Pontuação final:", self.score)
-        action = self.game_over_screen.run(self.score, self.high_score)
+        action = await self.game_over_screen.run(self.score, self.high_score)
         if action == "restart":
             self.__init__()
-            self.run()
+            await self.run()
         elif action == "menu":
-            self.run()
+            await self.run()
