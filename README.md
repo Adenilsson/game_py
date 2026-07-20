@@ -34,9 +34,9 @@ python motor.py
 
 1. Escolha o modo de jogo: **Jogar sozinho**, **Hospedar partida (LAN)** ou **Entrar em partida (LAN)** — veja [Modo cooperativo em LAN](#modo-cooperativo-em-lan).
 2. Na tela inicial, escolha sua nave de combate no carrossel (use as setas `<`/`>` na tela, ou as teclas `←`/`→` do teclado), informe um nome e clique em **JOGAR**. Naves ainda bloqueadas aparecem em silhueta, com o recorde necessário para desbloqueá-las (veja [Desbloqueio de naves](#desbloqueio-de-naves)).
-3. Leia as instruções e clique em **INICIAR**.
+3. Leia as instruções e clique em **INICIAR**. O jogo começa mostrando o nome da fase atual (**"Fire in the Sky"** na primeira) em fonte grande por 2 segundos, antes de desaparecer aos poucos e liberar os inimigos.
 4. Destrua os inimigos para ganhar pontos e evite colisões com naves e projéteis inimigos.
-5. A cada onda (*wave*) vencida ou marco de pontuação atingido, o jogo sobe de nível: inimigos ficam mais rápidos, mais fortes e aparecem com mais frequência.
+5. A cada onda (*wave*) vencida ou marco de pontuação atingido, o jogo sobe de nível: inimigos ficam mais rápidos, mais fortes e aparecem com mais frequência. A cada 10 ondas, uma nova fase começa (mesma introdução de nome).
 6. Você começa com **2 vidas** (contador "Vidas" no HUD, abaixo da barra de vida). Ao perder toda a vida, a nave reaparece com vida cheia e alguns segundos de invencibilidade (pisca durante esse período), consumindo uma vida — só quando as vidas acabam é que a nave é destruída de vez. No cooperativo, a partida só termina quando **todos** os jogadores esgotarem suas vidas.
 7. De tempos em tempos cai uma **caixa de vida extra** (paraquedas) do topo da tela — encoste nela para ganhar uma vida antes que ela saia da tela por baixo.
 8. Também caem **caixas de munição** coloridas (mesmo estilo paraquedas): cada cor recarrega totalmente a munição de uma arma específica — veja [Caixas de munição](#caixas-de-munição).
@@ -192,10 +192,11 @@ game_py/
 
 ## Sistema de progressão
 
-O jogo combina dois sistemas de dificuldade, controlados em `Game`:
+O jogo combina três sistemas de dificuldade/progressão, controlados em `Game`:
 
 - **Níveis** (`self.levels`): a cada marco de pontuação, aumentam a velocidade/dano dos inimigos e reduzem o intervalo de spawn. Também controlam quantos inimigos aparecem de uma só vez a cada spawn (`Game._spawn_batch_size()`): 2 no início, chegando a 6 simultâneos no nível mais alto.
 - **Ondas** (`self.waves`): definem quantos inimigos de cada tipo aparecem antes de avançar para a próxima onda (atualmente 5 ondas, de 15 a 32 inimigos no total; cada onda já combina pelo menos dois tipos de inimigo — logo, duas armas diferentes — desde a primeira, chegando aos 5 tipos/armas a partir da onda 4; ondas além da 5ª são geradas automaticamente, cada vez mais difíceis).
+- **Fases** (`PHASE_NAMES`, a cada `PHASE_LENGTH_WAVES` = 10 ondas): agrupam várias ondas sob um nome. A primeira fase é **"Fire in the Sky"**; fases seguintes sem nome cadastrado recebem um nome genérico ("Fase 2", "Fase 3", ...). No início de cada fase (inclusive a primeira, assim que a partida começa), o nome aparece centralizado em fonte grande por 2 segundos e depois desaparece com um fade suave de 1,5s — o spawn de inimigos fica pausado até o fade terminar. Sincronizado entre host e cliente no modo cooperativo.
 
 ## Build (executável)
 

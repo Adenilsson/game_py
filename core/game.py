@@ -39,6 +39,19 @@ POWERUP_MAX_INTERVAL_MS = 50000
 AMMO_BOX_MIN_INTERVAL_MS = 20000
 AMMO_BOX_MAX_INTERVAL_MS = 30000
 
+# Sistema de fases: a cada PHASE_LENGTH_WAVES ondas vencidas, o jogo entra
+# numa nova fase. No início de cada fase, o nome dela aparece em fonte
+# grande por PHASE_INTRO_HOLD_MS, depois desaparece suavemente ao longo
+# de PHASE_INTRO_FADE_MS — o spawn de inimigos fica pausado até o fim
+# desse fade. Fases sem nome cadastrado em PHASE_NAMES recebem um nome
+# genérico ("Fase N").
+PHASE_LENGTH_WAVES = 10
+PHASE_INTRO_HOLD_MS = 2000
+PHASE_INTRO_FADE_MS = 1500
+PHASE_NAMES = {
+    1: "Fire in the Sky",
+}
+
 
 def _is_alive(player):
     """`Player.alive` só vira um booleano de verdade depois do primeiro
@@ -89,6 +102,13 @@ class Game:
         self.enemies_spawned = 0
         self.wave_active = False
         self.wave_config = {}  # configuração da wave atual
+
+        # Sistema de fases (a cada PHASE_LENGTH_WAVES ondas): começa em
+        # None para que a primeira fase (1) dispare sua introdução assim
+        # que o jogo começa, igual a uma transição normal de fase.
+        self.current_phase = None
+        self.phase_intro_active = False
+        self.phase_intro_start = 0
 
         self.current_level_index = 0
         self.level_up = False
@@ -165,6 +185,61 @@ class Game:
             "tank": 3 + extra // 3,
             "spreader": 6 + extra // 2,
         }
+
+    def _phase_for_wave(self, wave_number):
+        """Calcula em qual fase cai a onda `wave_number` (ondas 1 a
+        `PHASE_LENGTH_WAVES` são a fase 1, as próximas `PHASE_LENGTH_WAVES`
+        são a fase 2, e assim por diante)."""
+        return (wave_number - 1) // PHASE_LENGTH_WAVES + 1
+
+    def _phase_name(self, phase_number):
+        """Nome de exibição da fase: usa o nome cadastrado em
+        `PHASE_NAMES`, ou um nome genérico ("Fase N") para fases além das
+        nomeadas manualmente."""
+        return PHASE_NAMES.get(phase_number, f"Fase {phase_number}")
+
+    def _start_phase_intro(self):
+        """Inicia a introdução da fase atual: nome em fonte grande,
+        exibido por `PHASE_INTRO_HOLD_MS` e depois esmaecido ao longo de
+        `PHASE_INTRO_FADE_MS`. Enquanto ativa, o spawn de novos inimigos
+        fica pausado (ver `_host_or_solo_game_loop`)."""
+        self.phase_intro_active = True
+        self.phase_intro_start = pygame.time.get_ticks()
+
+    def _update_phase_intro(self):
+        """Verifica se a introdução da fase atual já deve terminar
+        (depois do tempo de exibição + fade), liberando o spawn de
+        inimigos nesse momento."""
+        if not self.phase_intro_active:
+            return
+        elapsed = pygame.time.get_ticks() - self.phase_intro_start
+        if elapsed >= PHASE_INTRO_HOLD_MS + PHASE_INTRO_FADE_MS:
+            self.phase_intro_active = False
+
+    def _draw_phase_intro(self):
+        """Desenha o nome da fase atual centralizado em fonte grande,
+        com um leve escurecimento de fundo para destacá-lo; após o tempo
+        de exibição fixo, tanto o texto quanto o fundo desaparecem com um
+        fade suave."""
+        elapsed = pygame.time.get_ticks() - self.phase_intro_start
+        if elapsed < PHASE_INTRO_HOLD_MS:
+            alpha = 255
+        else:
+            fade_elapsed = elapsed - PHASE_INTRO_HOLD_MS
+            alpha = max(0, 255 - int(255 * fade_elapsed / PHASE_INTRO_FADE_MS))
+
+        if alpha <= 0:
+            return
+
+        overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, min(130, alpha)))
+        self.screen.blit(overlay, (0, 0))
+
+        font = pygame.font.SysFont(None, 72)
+        font.set_bold(True)
+        text = font.render(self._phase_name(self.current_phase).upper(), True, (255, 215, 0))
+        text.set_alpha(alpha)
+        self.screen.blit(text, text.get_rect(center=(WIDTH // 2, HEIGHT // 2)))
 
     def start_wave(self, wave_number):
         """Ativa a onda de inimigos indicada, carregando sua configuração
@@ -442,13 +517,21 @@ class Game:
                 now = pygame.time.get_ticks()
                 self.enemies.update(alive_players, self.projectiles_group, self, speed=self.enemy_speed, damage=self.enemy_damage)
 
-                # --- Sistema de ondas ---
-                if not self.wave_active:
-                    self.start_wave(self.current_wave)
+                # --- Sistema de fases: detecta a mudança e dispara a introdução ---
+                new_phase = self._phase_for_wave(self.current_wave)
+                if new_phase != self.current_phase:
+                    self.current_phase = new_phase
+                    self._start_phase_intro()
+                self._update_phase_intro()
 
-                if self.wave_active and now - self.last_spawn > self.spawn_interval:
-                    self.spawn_wave_enemy()
-                    self.last_spawn = now
+                # --- Sistema de ondas (pausado durante a introdução da fase) ---
+                if not self.phase_intro_active:
+                    if not self.wave_active:
+                        self.start_wave(self.current_wave)
+
+                    if self.wave_active and now - self.last_spawn > self.spawn_interval:
+                        self.spawn_wave_enemy()
+                        self.last_spawn = now
 
                 # quando todos os inimigos da wave forem criados e derrotados
                 if self.wave_active and len(self.enemies) == 0 and all(v == 0 for v in self.wave_config.values()):
@@ -630,6 +713,9 @@ class Game:
             "score": self.score,
             "current_wave": self.current_wave,
             "level_up": self.level_up,
+            "current_phase": self.current_phase,
+            "phase_intro_active": self.phase_intro_active,
+            "phase_intro_elapsed": (pygame.time.get_ticks() - self.phase_intro_start) if self.phase_intro_active else 0,
             "players": players_data,
             "enemies": enemies_data,
             "projectiles": projectiles_data,
@@ -647,6 +733,13 @@ class Game:
         self.score = snapshot.get("score", self.score)
         self.current_wave = snapshot.get("current_wave", self.current_wave)
         self.level_up = snapshot.get("level_up", False)
+        self.current_phase = snapshot.get("current_phase", self.current_phase)
+        self.phase_intro_active = snapshot.get("phase_intro_active", False)
+        if self.phase_intro_active:
+            # Recalcula o instante de início a partir do tempo já
+            # decorrido no host, para que o fade fique sincronizado
+            # entre as telas em vez de reiniciar a cada snapshot.
+            self.phase_intro_start = pygame.time.get_ticks() - snapshot.get("phase_intro_elapsed", 0)
 
         # --- Jogadores (bonecos) ---
         seen_player_ids = set()
@@ -776,6 +869,9 @@ class Game:
         self.screen.blit(score_text, (WIDTH - 150, 10))
         high_score_text = font.render(f"Recorde: {self.high_score}", True, (255, 215, 0))
         self.screen.blit(high_score_text, (WIDTH - 150, 45))
+
+        if self.phase_intro_active:
+            self._draw_phase_intro()
 
         if self.paused:
             self._draw_pause_overlay()
