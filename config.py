@@ -27,4 +27,5 @@ WEAPON_COLORS = {
     "HeavyLaser": (255, 0, 0),       # vermelho
     "QuadShot": (0, 220, 150),       # verde-água
     "HomingShot": (255, 60, 200),    # magenta
+    "GrenadeWeapon": (60, 160, 60),  # verde-oliva
 }

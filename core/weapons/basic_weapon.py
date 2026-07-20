@@ -18,6 +18,8 @@ class BasicWeapon(BaseWeapon):
     menos rápido."""
 
     def __init__(self, owner, damage=30, fire_rate=100):
+        """Configura dano e cadência da arma básica; munição sempre
+        infinita (`ammo=None`) e um único projétil por disparo."""
         super().__init__(owner, damage=damage, fire_rate=fire_rate, ammo=None, burst=1)
 
     def update(self, player=None, projectiles_group=None, enemies_group=None):
@@ -47,6 +49,8 @@ class DoubleShot(BaseWeapon):
     limitada e recarga automática ao zerar."""
 
     def __init__(self, owner, damage=25, fire_rate=400, ammo_max=20):
+        """Configura munição, cadência e tempo de recarga da rajada
+        dupla; começa com a munição cheia e fora do estado de recarga."""
         super().__init__(owner, damage=damage, fire_rate=fire_rate, ammo=ammo_max, burst=2)
         self.ammo_max = ammo_max       # quantidade máxima de munição
         self.ammo = self.ammo_max      # começa cheia
@@ -98,6 +102,8 @@ class TripolShot(BaseWeapon):
     recarga automática."""
 
     def __init__(self, owner, damage=25, fire_rate=400, ammo_max=20):
+        """Configura munição, cadência e tempo de recarga da rajada
+        tripla; começa com a munição cheia e fora do estado de recarga."""
         super().__init__(owner, damage=damage, fire_rate=fire_rate, ammo=ammo_max, burst=3)
         self.ammo_max = ammo_max
         self.ammo = self.ammo_max
@@ -148,6 +154,9 @@ class HeavyLaser(BaseWeapon):
     disparando um único projétil grande."""
 
     def __init__(self, owner, damage=50, fire_rate=500, ammo_max=10):
+        """Configura munição, cadência e tempo de recarga (o mais longo
+        do arsenal, pelo dano elevado); começa com a munição cheia e
+        fora do estado de recarga."""
         super().__init__(owner, damage=damage, fire_rate=fire_rate, ammo=ammo_max, burst=1)
         self.ammo_max = ammo_max
         self.ammo = self.ammo_max
@@ -195,6 +204,9 @@ class QuadShot(BaseWeapon):
     Reservada às naves de tier mais alto (mais opções de arma)."""
 
     def __init__(self, owner, damage=20, fire_rate=450, ammo_max=16):
+        """Configura munição, cadência e tempo de recarga do disparo em
+        leque de quatro projéteis; começa com a munição cheia e fora do
+        estado de recarga."""
         super().__init__(owner, damage=damage, fire_rate=fire_rate, ammo=ammo_max, burst=4)
         self.ammo_max = ammo_max
         self.ammo = self.ammo_max
@@ -241,19 +253,24 @@ class QuadShot(BaseWeapon):
 
 
 class HomingShot(BaseWeapon):
-    """Arma exclusiva das naves de tier mais alto: dispara um único
-    projétil teleguiado que mira automaticamente o inimigo mais próximo
-    no momento do disparo. Sem inimigos por perto, dispara reto para
-    cima."""
+    """Arma exclusiva das naves de tier mais alto: dispara três
+    projéteis teleguiados simultâneos, em leque, mirados no inimigo
+    mais próximo no momento do disparo. Sem inimigos por perto, dispara
+    reto para cima."""
 
-    def __init__(self, owner, damage=35, fire_rate=600, ammo_max=8):
-        super().__init__(owner, damage=damage, fire_rate=fire_rate, ammo=ammo_max, burst=1)
+    def __init__(self, owner, damage=35, fire_rate=350, ammo_max=8):
+        """Configura munição, cadência (mais rápida que o disparo único
+        original, já que agora sai em leque de três), tempo de recarga
+        e a velocidade dos projéteis teleguiados; começa com a munição
+        cheia e fora do estado de recarga."""
+        super().__init__(owner, damage=damage, fire_rate=fire_rate, ammo=ammo_max, burst=3)
         self.ammo_max = ammo_max
         self.ammo = self.ammo_max
         self.reload_time = 3000
         self.reloading = False
         self.reload_start = 0
         self.speed = 12
+        self.spread_angles = (-14, 0, 14)  # graus de abertura do leque
 
     def start_reload(self):
         """Inicia o processo de recarga, zerando o cronômetro de recarga."""
@@ -278,9 +295,21 @@ class HomingShot(BaseWeapon):
         length = math.hypot(dx, dy) or 1
         return (dx / length * self.speed, dy / length * self.speed)
 
+    @staticmethod
+    def _rotate_velocity(velocity, degrees):
+        """Rotaciona um vetor de velocidade pelo ângulo indicado (em
+        graus), usado para abrir o leque de projéteis teleguiados em
+        torno da direção mirada no alvo."""
+        rad = math.radians(degrees)
+        cos_a, sin_a = math.cos(rad), math.sin(rad)
+        vx, vy = velocity
+        return (vx * cos_a - vy * sin_a, vx * sin_a + vy * cos_a)
+
     def shoot(self, projectiles_group, enemies_group=None):
-        """Dispara um projétil magenta mirado no inimigo mais próximo
-        (ou reto para cima, se não houver alvo) e inicia a recarga
+        """Dispara três projéteis magenta em leque, todos mirados no
+        inimigo mais próximo (ou retos para cima, se não houver alvo) —
+        a direção central mira o alvo, e as outras duas são a mesma
+        direção rotacionada para cada lado — e inicia a recarga
         automática assim que a munição zera."""
         if not self.can_shoot():
             return
@@ -289,18 +318,20 @@ class HomingShot(BaseWeapon):
         if self.ammo == 0:
             self.start_reload()
 
-        velocity = self._velocity_towards_nearest(enemies_group) or (0, -self.speed)
+        aim_velocity = self._velocity_towards_nearest(enemies_group) or (0, -self.speed)
 
-        projectile = Projectile(
-            x=self.owner.rect.centerx,
-            y=self.owner.rect.top,
-            velocity=velocity,
-            damage=self.damage,
-            color=(255, 60, 200),   # magenta
-            size=(9, 9),
-            owner="player",
-        )
-        projectiles_group.add(projectile)
+        for angle in self.spread_angles:
+            velocity = self._rotate_velocity(aim_velocity, angle)
+            projectile = Projectile(
+                x=self.owner.rect.centerx,
+                y=self.owner.rect.top,
+                velocity=velocity,
+                damage=self.damage,
+                color=(255, 60, 200),   # magenta
+                size=(9, 9),
+                owner="player",
+            )
+            projectiles_group.add(projectile)
 
     def update(self, player=None, projectiles_group=None, enemies_group=None):
         """Enquanto a arma está recarregando, verifica se o tempo de

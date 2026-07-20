@@ -31,6 +31,11 @@ class GameOverScreen:
         self.font_title.set_bold(True)
         self.font_text = pygame.font.SysFont(None, 40)
         self.font_button = pygame.font.SysFont(None, 44)
+        self.font_leader_title = pygame.font.SysFont(None, 26)
+        self.font_leader_title.set_bold(True)
+        self.font_leader = pygame.font.SysFont(None, 20)
+        self.font_leader_top = pygame.font.SysFont(None, 22)
+        self.font_leader_top.set_bold(True)
         self.background = self._build_gradient()
 
     def _build_gradient(self):
@@ -53,11 +58,15 @@ class GameOverScreen:
         pygame.draw.rect(self.screen, (255, 255, 255), rect, width=2, border_radius=14)
         self.screen.blit(text_surface, text_surface.get_rect(center=rect.center))
 
-    def run(self, final_score, high_score=None):
+    def run(self, final_score, high_score=None, leaderboard=None):
         """Exibe a tela de game over em loop até o jogador clicar em
         REINICIAR ou MENU, retornando a ação escolhida ("restart"/"menu").
         Se `high_score` for informado, mostra também o recorde atual e
-        destaca quando a pontuação da partida é um novo recorde."""
+        destaca quando a pontuação da partida é um novo recorde.
+        `leaderboard` é a lista (nome, pontuação) das 10 maiores
+        pontuações já registradas (maior primeiro); quando informada, é
+        exibida abaixo dos botões, em fonte pequena para caber na tela,
+        com a maior pontuação destacada em dourado."""
         waiting = True
         action = None
 
@@ -79,7 +88,7 @@ class GameOverScreen:
         panel_width = 380
         panel_height = 130 if high_score_text is not None else 90
         panel_rect = pygame.Rect(0, 0, panel_width, panel_height)
-        panel_rect.center = (WIDTH // 2, 320)
+        panel_rect.center = (WIDTH // 2, 280)
         panel_surface = pygame.Surface((panel_rect.width, panel_rect.height), pygame.SRCALPHA)
         pygame.draw.rect(panel_surface, PANEL_COLOR, panel_surface.get_rect(), border_radius=20)
         border_color = (255, 215, 0, 220) if is_new_record else PANEL_BORDER_COLOR
@@ -89,9 +98,24 @@ class GameOverScreen:
         menu_text = self.font_button.render("MENU", True, (255, 255, 255))
 
         restart_button = pygame.Rect(0, 0, 220, 58)
-        restart_button.center = (WIDTH // 2, panel_rect.bottom + 90)
+        restart_button.center = (WIDTH // 2, panel_rect.bottom + 70)
         menu_button = pygame.Rect(0, 0, 220, 58)
-        menu_button.center = (WIDTH // 2, restart_button.bottom + 35)
+        menu_button.center = (WIDTH // 2, restart_button.bottom + 45)
+
+        # --- Placar (top 10), em fonte pequena para caber abaixo dos botões ---
+        leaderboard = leaderboard or []
+        leader_title_text = self.font_leader_title.render("TOP 10 PONTUAÇÕES", True, (255, 255, 255))
+        leader_top_y = menu_button.bottom + 15
+
+        leader_rows = []  # (surface, altura_da_linha)
+        for i, (name, score) in enumerate(leaderboard[:10]):
+            is_top = i == 0
+            font = self.font_leader_top if is_top else self.font_leader
+            color = (255, 215, 0) if is_top else (220, 220, 220)
+            display_name = name[:14]
+            row_text = f"{i + 1}. {display_name} — {score}"
+            surface = font.render(row_text, True, color)
+            leader_rows.append((surface, 22 if is_top else 19))
 
         while waiting:
             mouse_pos = pygame.mouse.get_pos()
@@ -113,6 +137,14 @@ class GameOverScreen:
                                _lighten(settings.accent_color), restart_button.collidepoint(mouse_pos))
             self._draw_button(menu_button, menu_text, MENU_COLOR, MENU_HOVER_COLOR,
                                menu_button.collidepoint(mouse_pos))
+
+            # Placar (top 10)
+            if leader_rows:
+                self.screen.blit(leader_title_text, (WIDTH // 2 - leader_title_text.get_width() // 2, leader_top_y))
+                row_y = leader_top_y + 30
+                for surface, row_height in leader_rows:
+                    self.screen.blit(surface, (WIDTH // 2 - surface.get_width() // 2, row_y))
+                    row_y += row_height
 
             pygame.display.flip()
 

@@ -22,7 +22,7 @@ class ModeSelectScreen:
         """Guarda a referência da superfície de desenho e prepara as fontes."""
         self.screen = screen
         self.font_title = pygame.font.SysFont(None, 60)
-        self.font_button = pygame.font.SysFont(None, 38)
+        self.font_button = pygame.font.SysFont(None, 28)
         self.font_hint = pygame.font.SysFont(None, 24)
 
     def _draw_button(self, rect, text_surface, base_color, hover_color, hovered):
@@ -35,6 +35,9 @@ class ModeSelectScreen:
     def run(self):
         """Exibe a tela em loop até o jogador escolher um modo ou sair.
         Retorna "solo", "host" ou "join"."""
+        splash = pygame.image.load("assets/imagens/telas/splash.jpg").convert_alpha()
+        splash = pygame.transform.scale(splash, (WIDTH, HEIGHT))
+
         title_text = self.font_title.render("Como você quer jogar?", True, (255, 255, 255))
         hint_text = self.font_hint.render(
             "Hospedar/Entrar exige que os jogadores estejam na mesma rede local",
@@ -62,7 +65,7 @@ class ModeSelectScreen:
         while waiting:
             mouse_pos = pygame.mouse.get_pos()
 
-            self.screen.fill((15, 15, 25))
+            self.screen.blit(splash, (0, 0))
             self.screen.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, 140))
             self.screen.blit(hint_text, (WIDTH // 2 - hint_text.get_width() // 2, 210))
 

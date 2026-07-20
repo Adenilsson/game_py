@@ -10,7 +10,7 @@ import pygame
 from config import WIDTH, HEIGHT
 from core.settings import settings
 from core.settings_screen import SettingsScreen
-from core.highscore import load_high_score
+from core.highscore import get_player_best
 from core.skins import PLAYER_SKINS_DIR, discover_skins
 
 # Cores usadas nos botões da tela inicial (a cor de destaque, usada no
@@ -29,10 +29,14 @@ LOCKED_BORDER_COLOR = (140, 140, 140)
 LOCKED_TEXT_COLOR = (255, 110, 110)
 
 # Sistema de desbloqueio de naves por recorde: a primeira nave está
-# sempre disponível; cada nave seguinte exige um recorde maior que a
-# anterior, com incrementos crescentes (100, 250, 450, 700, 1000, ...)
-UNLOCK_BASE_SCORE = 100
-UNLOCK_SCORE_STEP = 50
+# sempre disponível; cada nave seguinte exige um recorde pessoal maior
+# que o anterior, com incrementos crescentes (30, 80, 150, 240, ...).
+# O recorde considerado é o do jogador com o nome informado no campo
+# abaixo (ver `get_player_best`) — uma nave liberada por um jogador não
+# fica disponível para os outros, cada um precisa atingir sua própria
+# pontuação.
+UNLOCK_BASE_SCORE = 30
+UNLOCK_SCORE_STEP = 20
 
 
 def _lighten(color, amount=30):
@@ -178,12 +182,16 @@ class StartScreen:
 
         show_arrows = len(self.available_skins) > 1
 
-        # --- Sistema de desbloqueio por recorde ---
+        # --- Sistema de desbloqueio por recorde pessoal ---
         # A primeira nave (índice 0) está sempre disponível; as demais
-        # exigem o recorde mínimo calculado por `_unlock_score_for_index`.
-        self.high_score = load_high_score()
+        # exigem o recorde mínimo calculado por `_unlock_score_for_index`,
+        # verificado contra o recorde pessoal do nome digitado no campo
+        # de nome (recalculado a cada quadro, para reagir enquanto o
+        # jogador digita/apaga o nome).
         unlock_thresholds = [_unlock_score_for_index(i) for i in range(len(self.available_skins))]
-        unlocked_flags = [self.high_score >= threshold for threshold in unlock_thresholds]
+        player_best = 0
+        unlocked_flags = [threshold == 0 for threshold in unlock_thresholds]
+        last_checked_name = None
 
         ship_images = []
         ship_images_locked = []
@@ -249,6 +257,11 @@ class StartScreen:
         while waiting:
             mouse_pos = pygame.mouse.get_pos()
 
+            if self.player_name != last_checked_name:
+                last_checked_name = self.player_name
+                player_best = get_player_best(self.player_name)
+                unlocked_flags = [player_best >= threshold for threshold in unlock_thresholds]
+
             self.screen.blit(splash, (0, 0))
             self.screen.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, title_y))
             self._draw_gear_button(gear_button, gear_button.collidepoint(mouse_pos))
@@ -279,10 +292,11 @@ class StartScreen:
             else:
                 needed = unlock_thresholds[self.selected_skin_index]
                 lock_line1 = self.font_lock.render("Nave bloqueada", True, LOCKED_TEXT_COLOR)
-                lock_line2 = self.font_lock.render(
-                    f"Recorde necessário: {needed} (seu recorde: {self.high_score})",
-                    True, LOCKED_TEXT_COLOR,
-                )
+                if self.player_name.strip():
+                    lock_msg = f"Recorde necessário: {needed} (seu recorde: {player_best})"
+                else:
+                    lock_msg = f"Recorde necessário: {needed} — informe seu nome para ver seu recorde"
+                lock_line2 = self.font_lock.render(lock_msg, True, LOCKED_TEXT_COLOR)
                 self.screen.blit(lock_line1, (WIDTH // 2 - lock_line1.get_width() // 2, skin_name_y))
                 self.screen.blit(lock_line2, (WIDTH // 2 - lock_line2.get_width() // 2, skin_name_y + lock_line_height))
 

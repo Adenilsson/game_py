@@ -20,7 +20,7 @@ from core.enemy import BasicEnemy, ShooterEnemy, FastEnemy, TankEnemy, SpreaderE
 from core.effects import Explosion
 from core.powerup import LifeBox
 from core.ammo_box import AmmoBox, AMMO_BOX_WEAPON_MAP, available_ammo_colors
-from core.highscore import load_high_score, save_high_score
+from core.highscore import load_high_score, submit_score, record_player_score
 from core.settings import settings
 from core.network.host import GameServer
 from core.network.client import GameClient
@@ -781,21 +781,24 @@ class Game:
             self._draw_pause_overlay()
 
     def _end_game(self):
-        """Encerra recursos de rede (se houver), salva o recorde se a
-        pontuação da partida superou o anterior, exibe a tela de game
-        over e reage à escolha do jogador (reiniciar ou voltar ao menu
-        reinicia todo o estado do jogo, incluindo o modo de rede)."""
+        """Encerra recursos de rede (se houver), registra a pontuação
+        da partida no placar geral e no recorde pessoal do jogador local
+        (usado pelo desbloqueio de naves), exibe a tela de game over e
+        reage à escolha do jogador (reiniciar ou voltar ao menu reinicia
+        todo o estado do jogo, incluindo o modo de rede)."""
         if self.network_role == "host" and self.server:
             self.server.stop()
         if self.network_role == "client" and self.client:
             self.client.disconnect()
 
-        if self.score > self.high_score:
-            self.high_score = self.score
-            save_high_score(self.high_score)
+        leaderboard = submit_score(self._local_name, self.score)
+        self.high_score = leaderboard[0][1] if leaderboard else self.high_score
+        # Recorde pessoal: usado pelo sistema de desbloqueio de naves,
+        # que libera cada nave só para quem realmente atingiu a pontuação.
+        record_player_score(self._local_name, self.score)
 
         print(" Game Over! Pontuação final:", self.score)
-        action = self.game_over_screen.run(self.score, self.high_score)
+        action = self.game_over_screen.run(self.score, self.high_score, leaderboard)
         if action in ("restart", "menu"):
             # Ambas as opções encerram a partida atual; sem resetar aqui,
             # score, inimigos, ondas e projéteis da partida anterior

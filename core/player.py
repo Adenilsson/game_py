@@ -63,13 +63,20 @@ class Player(pygame.sprite.Sprite):
         self.invulnerable_until = 0  # timestamp (pygame.time.get_ticks()) até quando ignora dano
 
     def shoot(self, projectiles_group, enemies_group=None):
-        """Aciona o disparo da arma atualmente equipada. `enemies_group`
-        é repassado para armas com mira automática (ex.: HomingShot)."""
-        self.weapon.shoot(projectiles_group, enemies_group)
+        """A arma básica (`weapons[0]`) dispara sempre. Se o jogador tiver
+        selecionado outro tipo de munição com a tecla F (índice diferente
+        de 0), ela dispara acumulada ao tiro básico — cada arma respeita
+        seu próprio intervalo entre disparos e limite de munição, de
+        forma independente. `enemies_group` é repassado para armas com
+        mira automática (ex.: HomingShot)."""
+        self.weapons[0].shoot(projectiles_group, enemies_group)
+        if self.current_weapon_index != 0:
+            self.weapon.shoot(projectiles_group, enemies_group)
 
     def change_weapon(self):
-        """Avança para a próxima arma da lista, voltando à primeira
-        ao chegar no fim (troca cíclica)."""
+        """Avança para a próxima munição secundária da lista (troca
+        cíclica); ao voltar ao índice 0 (a arma básica), nenhuma munição
+        extra fica acumulada e o jogador dispara só o tiro básico."""
         self.current_weapon_index = (self.current_weapon_index + 1) % len(self.weapons)
         self.weapon = self.weapons[self.current_weapon_index]
 
@@ -177,10 +184,12 @@ class Player(pygame.sprite.Sprite):
         surface.blit(text_surface, text_rect)
 
     def draw_weapons_hud(self, surface):
-        """Desenha um círculo colorido para cada arma do arsenal, destacando
-        a arma ativa com uma borda na cor de destaque escolhida pelo
-        jogador e exibindo a munição restante (ou o símbolo de infinito
-        quando a arma não consome munição)."""
+        """Desenha um círculo colorido para cada arma do arsenal e exibe a
+        munição restante (ou o símbolo de infinito quando a arma não
+        consome munição). A arma básica (índice 0) sempre tem uma borda
+        branca, por disparar em toda partida; a munição secundária
+        selecionada com F (se houver) ganha uma borda na cor de destaque
+        do jogador, indicando que dispara acumulada à básica."""
         x_offset = 20
         y_offset = HEIGHT - 60
         radius = 20
@@ -191,8 +200,12 @@ class Player(pygame.sprite.Sprite):
 
             pygame.draw.circle(surface, color, pos, radius)
 
-            # borda na cor de destaque, na arma ativa
-            if i == self.current_weapon_index:
+            if i == 0:
+                # a arma básica dispara sempre, em toda partida
+                pygame.draw.circle(surface, (255, 255, 255), pos, radius, 3)
+
+            # borda na cor de destaque: munição secundária acumulada
+            if i == self.current_weapon_index and i != 0:
                 pygame.draw.circle(surface, settings.accent_color, pos, radius, 3)
 
             # munição
